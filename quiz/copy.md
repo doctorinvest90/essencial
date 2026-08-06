@@ -134,11 +134,20 @@ Fonte de verdade do texto **antes** de virar HTML. Spec: `docs/superpowers/specs
 >
 > Numa posição de R$ 300 mil, **cada ponto percentual de taxa de administração são R$ 3.000 por ano**. Todo ano, com o produto subindo ou caindo, sem uma linha no extrato mensal.
 >
-> A conta é aritmética simples: 1% de R$ 300 mil. Vale como exemplo do tamanho da coisa, e custo passado se repete com precisão de relógio.
+> A conta é aritmética simples: 1% de R$ 300 mil.
 >
 > *fonte: A Tarifa Invisível do Médico, frente 02*
 >
 > **[ Continuar ]**
+
+<!--
+ALTERNATIVA DA TELA 7, para o portão do Hélio trocar com um edit.
+Troca só a frase final do bloco (a linha da aritmética) por esta versão, que
+ancora a taxa em documento do produto em vez de descrever ela como algo que
+se repete.
+
+> A conta é aritmética simples: 1% de R$ 300 mil. A taxa está escrita no regulamento e na lâmina do produto, em percentual, antes de você aplicar.
+-->
 
 ---
 
@@ -180,7 +189,7 @@ Fonte de verdade do texto **antes** de virar HTML. Spec: `docs/superpowers/specs
 >
 > Na mesma pesquisa, 1.255 respondentes foram perguntados **como** cobririam uma despesa inesperada de US$ 2.000 em 30 dias. Entre eles, **19% responderam que venderiam algo que possuem**.
 >
-> Quem já tinha dito que certamente não conseguiria levantar o valor não chegou a ser perguntado. Ou seja, o 19% sai de quem achava que daria conta.
+> Quem já tinha dito que certamente não conseguiria levantar o valor não chegou a ser perguntado.
 >
 > Investir com a base aberta funciona enquanto nada acontece. Quando acontece, a conta de curto prazo é paga com o que estava guardado para o longo, no mês que você não escolheu.
 >
