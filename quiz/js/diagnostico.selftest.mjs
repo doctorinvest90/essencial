@@ -117,27 +117,76 @@ const casosCincoTemplates = [
   }
 }
 
-// textoResultado: nenhuma string produzida cita ativo, promete rentabilidade
-// ou afirma interpretação tributária (regra regulatória, §4.9). Blocklist,
-// não NLP: word-boundary pra não pegar "ação" dentro de "organização" nem
-// "render" dentro de "renda".
+// Blocklist regulatória (§4.9) + o matcher que a aplica. Hoisted pra fora
+// do bloco de teste: a guarda precisa de teste próprio (review round 2),
+// desacoplado de "a copy de hoje está limpa" — isso não prova que a guarda
+// pega uma violação nova.
+//
+// Cada termo com plural regular ("+s") lista as duas formas: "s" é \w,
+// então \btermo\b não fecha fronteira em "termos" ("ganho" não batia em
+// "ganhos", achado do round 2). Plural irregular (ação→ações,
+// dedutível→dedutíveis, restituição→restituições) também listado por
+// extenso: não dá pra derivar de sufixo, e prefixo ingênuo (ex.: "dedut")
+// arrisca falso positivo em palavra não relacionada.
+const termosProibidos = [
+  "CDB", "CDBs", "LCI", "LCIs", "LCA", "LCAs", "tesouro", "tesouros",
+  "ação", "ações", "ETF", "ETFs", "FII", "FIIs", "fundo", "fundos",
+  "previdência", "previdências", "render", "rendimento", "rendimentos",
+  "rentabilidade", "rentabilidades", "retorno", "retornos", "valorizar",
+  "ganho", "ganhos", "% ao ano", "isento", "isentos", "dedutível",
+  "dedutíveis", "restituição", "restituições",
+];
+
+// Word-boundary pra não pegar "ação" dentro de "organização" nem "render"
+// dentro de "renda"; substring simples só pra "% ao ano" ("%" e espaço não
+// são caracteres de palavra).
+function termoProibidoEncontrado(texto) {
+  const lower = texto.toLowerCase();
+  return termosProibidos.find((termo) =>
+    /^[a-zà-ÿ]+$/i.test(termo)
+      ? new RegExp(`\\b${termo.toLowerCase()}\\b`, "i").test(lower)
+      : lower.includes(termo.toLowerCase())
+  );
+}
+
+// termoProibidoEncontrado testada isoladamente: violações no singular E no
+// plural. Prova que a guarda pega a edição futura, não só que a copy atual
+// passa.
 {
-  const termosProibidos = [
-    "CDB", "LCI", "LCA", "tesouro", "ação", "ações", "ETF", "FII", "fundo", "fundos", "previdência",
-    "render", "rendimento", "rentabilidade", "retorno", "valorizar", "ganho", "% ao ano",
-    "isento", "dedutível", "restituição",
+  const violacoes = [
+    "considere um CDB", "considere CDBs",
+    "essa LCI", "essas LCIs",
+    "essa LCA", "essas LCAs",
+    "aplique no tesouro", "aplique nos tesouros",
+    "compre uma ação", "compre ações",
+    "esse ETF", "esses ETFs",
+    "esse FII", "esses FIIs",
+    "esse fundo", "esses fundos",
+    "sua previdência", "suas previdências",
+    "isso vai render",
+    "seu rendimento", "seus rendimentos",
+    "a rentabilidade", "as rentabilidades",
+    "o retorno", "os retornos",
+    "vai valorizar",
+    "esse ganho", "esses ganhos",
+    "rende 12% ao ano",
+    "é isento", "são isentos",
+    "é dedutível", "são dedutíveis",
+    "peça a restituição", "peça as restituições",
   ];
-  const termoProibidoEncontrado = (texto) => {
-    const lower = texto.toLowerCase();
-    return termosProibidos.find((termo) =>
-      /^[a-zà-ÿ]+$/i.test(termo)
-        ? new RegExp(`\\b${termo.toLowerCase()}\\b`, "i").test(lower)
-        : lower.includes(termo.toLowerCase())
-    );
-  };
+  for (const texto of violacoes) {
+    assert.ok(termoProibidoEncontrado(texto), `guarda não pegou violação: "${texto}"`);
+  }
+}
+
+// textoResultado: nenhuma string produzida cita ativo, promete rentabilidade
+// ou afirma interpretação tributária. Inclui cta.href (carrega a mensagem do
+// WhatsApp url-encoded, texto que o usuário vê no compositor) — mesma
+// cobertura da guarda de travessão acima, sem assimetria.
+{
   for (const diag of casosCincoTemplates) {
     const texto = textoResultado(diag);
-    const strings = [texto.titulo, texto.porque, texto.primeiroPasso, texto.cta.label, ...texto.abertos];
+    const strings = [texto.titulo, texto.porque, texto.primeiroPasso, texto.cta.label, texto.cta.href, ...texto.abertos];
     for (const s of strings) {
       const achado = termoProibidoEncontrado(s);
       assert.ok(!achado, `termo proibido "${achado}" encontrado em: "${s}"`);
