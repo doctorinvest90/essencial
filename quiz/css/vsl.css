@@ -34,7 +34,11 @@
 }
 .oferta[hidden] { display: none; }
 .oferta.visivel { opacity: 1; transform: none; }
-.oferta h2 { font-size: clamp(26px, 6vw, 32px); margin: 8px 0 22px; }
+.oferta h2 { font-size: clamp(26px, 6vw, 32px); margin: 8px 0 10px; }
+/* who the product is for, right under the name: same spot and spirit as the
+   ceiling line in the video script (prompts/sales beat "O que e o Essencial"),
+   so it survives when the video is unheard, unwatched or simply missing */
+.oferta-teto { opacity: .8; font-size: 15px; margin: 0 0 26px; }
 .oferta-lista { list-style: none; text-align: left; max-width: 420px; margin: 0 auto 30px; font-size: 15.5px; }
 .oferta-lista li { padding: 7px 0 7px 24px; position: relative; opacity: .92; }
 .oferta-lista li::before { content: "—"; position: absolute; left: 0; color: var(--gold); }
