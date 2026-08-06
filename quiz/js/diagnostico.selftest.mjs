@@ -128,13 +128,27 @@ const casosCincoTemplates = [
 // dedutível→dedutíveis, restituição→restituições) também listado por
 // extenso: não dá pra derivar de sufixo, e prefixo ingênuo (ex.: "dedut")
 // arrisca falso positivo em palavra não relacionada.
+//
+// Round 3: infinitivo bare de "render"/"valorizar" não pega a conjugação
+// que aparece de verdade em copy financeira ("rende 1% ao mês" não batia
+// em nada — nem no verbo, nem em "% ao ano", que é frase fixa e só cobria
+// uma janela de tempo). Somei presente/passado/futuro na 3ª pessoa (o
+// sujeito de copy financeira é sempre o ativo/carteira, nunca "eu"/"tu" —
+// não é a conjugação completa de dicionário) e as janelas de tempo mais
+// comuns ao lado de "%". `render`/`rende`/`rendem`/etc. usam \b, então não
+// colidem com "renda" — a renda do médico é tema central do produto e
+// continua livre (ver o teste de falso positivo abaixo).
 const termosProibidos = [
   "CDB", "CDBs", "LCI", "LCIs", "LCA", "LCAs", "tesouro", "tesouros",
   "ação", "ações", "ETF", "ETFs", "FII", "FIIs", "fundo", "fundos",
-  "previdência", "previdências", "render", "rendimento", "rendimentos",
-  "rentabilidade", "rentabilidades", "retorno", "retornos", "valorizar",
-  "ganho", "ganhos", "% ao ano", "isento", "isentos", "dedutível",
-  "dedutíveis", "restituição", "restituições",
+  "previdência", "previdências",
+  "render", "rende", "rendem", "rendeu", "renderam", "renderá", "renderão",
+  "rendimento", "rendimentos", "rentabilidade", "rentabilidades",
+  "retorno", "retornos",
+  "valorizar", "valoriza", "valorizam", "valorizou", "valorizaram", "valorizará", "valorizarão",
+  "ganho", "ganhos",
+  "% ao ano", "% ao mês", "% ao trimestre",
+  "isento", "isentos", "dedutível", "dedutíveis", "restituição", "restituições",
 ];
 
 // Word-boundary pra não pegar "ação" dentro de "organização" nem "render"
@@ -150,8 +164,10 @@ function termoProibidoEncontrado(texto) {
 }
 
 // termoProibidoEncontrado testada isoladamente: violações no singular E no
-// plural. Prova que a guarda pega a edição futura, não só que a copy atual
-// passa.
+// plural, mais as formas verbais de render/valorizar e as janelas de tempo
+// (round 3) — "rende 1% ao mês" é a frase que o §4.9 proíbe e é a razão de
+// a guarda existir; hoje ela não batia em nada. Prova que a guarda pega a
+// edição futura, não só que a copy atual passa.
 {
   const violacoes = [
     "considere um CDB", "considere CDBs",
@@ -164,18 +180,43 @@ function termoProibidoEncontrado(texto) {
     "esse fundo", "esses fundos",
     "sua previdência", "suas previdências",
     "isso vai render",
+    "rende 1% ao mês",
+    "rende 12% ao ano",
+    "esse produto paga 3% ao mês",
+    "um produto que paga 2% ao trimestre",
+    "os investimentos rendem bem",
+    "isso rendeu bem",
+    "os investimentos renderam bem",
+    "isso renderá mais",
+    "esses investimentos renderão mais",
     "seu rendimento", "seus rendimentos",
     "a rentabilidade", "as rentabilidades",
     "o retorno", "os retornos",
     "vai valorizar",
+    "esse investimento valoriza rápido",
+    "esses investimentos valorizam rápido",
+    "isso valorizou bem",
+    "esses investimentos valorizaram bem",
+    "isso valorizará mais",
+    "esses investimentos valorizarão mais",
     "esse ganho", "esses ganhos",
-    "rende 12% ao ano",
     "é isento", "são isentos",
     "é dedutível", "são dedutíveis",
     "peça a restituição", "peça as restituições",
   ];
   for (const texto of violacoes) {
     assert.ok(termoProibidoEncontrado(texto), `guarda não pegou violação: "${texto}"`);
+  }
+
+  // Falso positivo que quebraria o produto: "renda" sozinha (a renda do
+  // médico é tema central da copy) não pode disparar a guarda. A segunda
+  // frase é o trecho real de DEGRAUS.B em resultado.mjs.
+  const legitimas = [
+    "Sua renda continua a mesma, mesmo com o imprevisto.",
+    "deixar a família sem renda ao mesmo tempo",
+  ];
+  for (const texto of legitimas) {
+    assert.equal(termoProibidoEncontrado(texto), undefined, `falso positivo em texto legítimo: "${texto}"`);
   }
 }
 
