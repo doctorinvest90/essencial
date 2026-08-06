@@ -1,0 +1,64 @@
+/* /vsl page (Task 6). Loaded after quiz.css: reuses the shared tokens, body
+   background, fonts, .wrap, .btn, .label from there. Only the pieces the
+   quiz screens do not need live here: the video player and the offer card. */
+
+.vsl { padding: 40px 0 20px; }
+.vsl .sub { opacity: .85; max-width: 480px; margin: 14px 0 30px; }
+
+/* video */
+.video-caixa {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: var(--dark);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.video-caixa video { width: 100%; height: 100%; object-fit: cover; }
+.video-caixa video[hidden] { display: none; }
+.video-aviso { padding: 0 24px; font-size: 15px; text-align: center; opacity: .85; }
+.video-aviso a { color: var(--gold); }
+
+/* offer: hidden until vsl.js reveals it, then fades in */
+.oferta {
+  margin-top: 44px;
+  padding-top: 36px;
+  border-top: 1px solid rgba(201, 168, 76, .25);
+  text-align: center;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity .5s ease, transform .5s ease;
+}
+.oferta[hidden] { display: none; }
+.oferta.visivel { opacity: 1; transform: none; }
+.oferta h2 { font-size: clamp(26px, 6vw, 32px); margin: 8px 0 22px; }
+.oferta-lista { list-style: none; text-align: left; max-width: 420px; margin: 0 auto 30px; font-size: 15.5px; }
+.oferta-lista li { padding: 7px 0 7px 24px; position: relative; opacity: .92; }
+.oferta-lista li::before { content: "—"; position: absolute; left: 0; color: var(--gold); }
+.oferta-preco { margin-bottom: 30px; }
+/* quiz.css does not define .btn-sub (plano.html has its own copy in an inline
+   <style>; this page has no inline style, so it needs its own rule) */
+.btn-sub { display: block; font-size: 13px; font-weight: 300; opacity: .8; margin-top: 10px; letter-spacing: 1px; }
+.btn-sub a { color: var(--gold); }
+.oferta-preco .valor {
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(44px, 10vw, 56px);
+  color: var(--gold);
+  margin-bottom: 20px;
+}
+.oferta-preco .valor span { display: block; font-family: "DM Sans", sans-serif; font-size: 15px; opacity: .7; margin-top: 4px; }
+
+.garantias { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+.gar { border: 1px dashed rgba(201, 168, 76, .5); border-radius: 8px; padding: 14px 18px; font-size: 13.5px; max-width: 260px; opacity: .9; }
+
+/* footer: quiz.css sets tight letter-spacing sized for the one-line brand
+   tag; the disclaimer paragraph and the /plano link need normal spacing to
+   stay readable, and the link needs a color (not opacity) to stand out
+   since the footer's own opacity already dims the whole subtree */
+.disclaimer { letter-spacing: normal; line-height: 1.6; margin-bottom: 16px; max-width: 640px; }
+.rodape-links { margin-bottom: 14px; letter-spacing: normal; }
+.rodape-links a { color: var(--gold); }
+.marca { letter-spacing: 1px; }

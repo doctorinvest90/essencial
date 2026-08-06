@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assista antes de decidir · Doctor Invest Essencial</title>
+<meta name="description" content="Um vídeo curto sobre como o Doctor Invest Essencial coloca a sua vida financeira em ordem, antes de você decidir.">
+<meta property="og:title" content="Assista antes de decidir · Doctor Invest Essencial">
+<meta property="og:description" content="Um vídeo curto sobre como o Doctor Invest Essencial coloca a sua vida financeira em ordem.">
+<meta property="og:type" content="website">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="quiz/css/quiz.css">
+<link rel="stylesheet" href="quiz/css/vsl.css">
+<script src="quiz/js/config.js"></script>
+</head>
+<body>
+
+<main>
+<section class="vsl">
+  <div class="wrap">
+    <div class="label">Doctor Invest Essencial</div>
+    <h1>O vídeo antes da oferta.</h1>
+    <p class="sub">Assista para entender como o Essencial coloca a sua vida financeira em ordem.</p>
+
+    <div class="video-caixa">
+      <!-- src lives directly on <video>, not a nested <source>: a <source>
+           child fires its "error" on itself, not on the video element, and
+           that event does not bubble, so vsl.js would never see a missing
+           file. One format only, so nothing is lost by skipping <source>. -->
+      <video id="video-vsl" controls playsinline preload="metadata" src="assets/vsl-essencial.mp4"></video>
+      <p class="video-aviso" id="aviso-video" hidden>O vídeo está indisponível no momento. <a href="/plano">Leia o plano completo</a> enquanto isso.</p>
+    </div>
+
+    <section class="oferta" id="oferta" hidden>
+      <div class="label">Lote de fundador</div>
+      <h2>Doctor Invest Essencial</h2>
+      <ul class="oferta-lista">
+        <li>Diagnóstico + plano individualizado revisado pessoalmente</li>
+        <li>Carteira de ETFs pro seu perfil</li>
+        <li>12 meses de acompanhamento mensal</li>
+        <li>Área de membros com as aulas do método</li>
+        <li>Revisão anual de perfil na renovação</li>
+      </ul>
+      <div class="oferta-preco">
+        <div class="valor">R$ 997<span>por ano</span></div>
+        <a class="btn btn-largo" id="cta-anual" href="">Garantir minha vaga →</a>
+        <span class="btn-sub">Prefere começar trimestral? <a id="cta-trimestral" href="">R$ 297 a cada 3 meses</a></span>
+      </div>
+      <div class="garantias">
+        <div class="gar"><strong>7 dias</strong> de arrependimento com devolução total (CDC)</div>
+        <div class="gar"><strong>Garantia de clareza:</strong> 15 dias após o plano, devolução integral se as prioridades não estiverem claras</div>
+      </div>
+    </section>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p class="disclaimer">O Doctor Invest Essencial é um serviço de consultoria de investimentos em formato digital prestado por Helio Cardoso de Barros (CNPJ 31.364.642/0001-01). Não prometemos rentabilidade, enriquecimento rápido ou ausência de riscos. As orientações dependem das informações fornecidas, do perfil do cliente, dos objetivos e das regras vigentes; investimentos envolvem riscos, incluindo perda de capital. A execução dos investimentos é realizada pelo próprio cliente em sua instituição financeira. Casos que ultrapassem o escopo do produto poderão ser encaminhados para análise individual.</p>
+    <p class="rodape-links"><a href="/plano">Prefere ler tudo antes de decidir? Veja o plano completo →</a></p>
+    <p class="marca">DOCTOR INVEST · @drheliobarros</p>
+  </div>
+</footer>
+
+<script src="quiz/js/vsl.js"></script>
+</body>
+</html>
