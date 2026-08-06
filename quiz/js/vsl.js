@@ -59,6 +59,14 @@ video.addEventListener("timeupdate", () => {
   if (acumulado >= delaySeconds) revelarOferta();
 });
 
+// Fallback that keeps a misconfigured delay from hiding the offer forever: a
+// video that reached the end was, by definition, watched enough. Without it,
+// an offerDelaySeconds larger than what the cut can accumulate (bad
+// measurement, a shorter re-cut, one digit too many) means the visitor
+// watches the whole thing and never sees a price or a button, with no error
+// and no beacon, and the funnel reads it as "the video loses people early".
+video.addEventListener("ended", revelarOferta);
+
 // Reset the baseline on pause and on seek so neither a resume nor a scrub
 // while paused computes a delta against a stale position.
 video.addEventListener("pause", () => { ultimoTempo = null; });
@@ -78,6 +86,12 @@ video.addEventListener("error", () => {
 // Base URLs live only in config.js; a price or SKU change never touches this
 // file. utm_content carries the quiz degrau when a session exists; without
 // one (email, e-book bridge, ad) the links are just the bare checkout.
+
+// Mirrors the Degrau domain of diagnostico.mjs (the OPENS keys A/B/C/D),
+// which is where these four letters are defined and where a fifth one would
+// be born. Not imported because this page must not pull the diagnosis engine
+// just to validate a session value; if that domain ever changes, change it
+// here too.
 const DEGRAUS_VALIDOS = ["A", "B", "C", "D"];
 
 function lerDegrauDoQuiz() {

@@ -41,6 +41,10 @@ export function enviarBeacon(page, event) {
       event,
       utm_source: params.get("utm_source"),
       utm_campaign: params.get("utm_campaign"),
+      // The backend already stores utm_content (main.py FunnelEventIn), and
+      // the checkout links carry the quiz degrau in it. Passing it through is
+      // what turns the funnel counts into conversion per degrau.
+      utm_content: params.get("utm_content"),
     });
     // sendBeacon survives the navigation a checkout click triggers right
     // after it fires; fetch+keepalive is the fallback for browsers without

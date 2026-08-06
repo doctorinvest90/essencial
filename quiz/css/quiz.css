@@ -192,6 +192,8 @@ main { flex: 1 0 auto; display: flex; flex-direction: column; }
 .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(201, 168, 76, 0.42); }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
 .btn-largo { width: 100%; text-align: center; }
+/* the advance button of a question screen sits right under the last option */
+.pergunta-bloco + .btn { margin-top: 10px; }
 .aviso { display: block; font-size: 13px; opacity: 0.6; margin-top: 14px; max-width: 420px; }
 .voltar {
   display: inline-block;

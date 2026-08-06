@@ -344,9 +344,13 @@ de fonte entre a Tela 4 e a Tela 10, que hoje citam o mesmo estudo.
 >
 > O diagnóstico abre na tela, agora. Pelo e-mail você recebe também a carta que eu escrevo duas vezes por semana sobre dinheiro para médico. Sai quando quiser, com um clique.
 >
+> [ ] Autorizo receber neste e-mail a carta sobre dinheiro para médico. Posso cancelar quando quiser.
+>
 > **[ VER MEU DIAGNÓSTICO ]**
 
 Campos: `nome`, `email`. Sem telefone (spec D6). Sem Person no Twenty.
+
+O consentimento promete só o que o sistema faz: a assinatura da carta (beehiiv). O diagnóstico aparece na tela e não é enviado por e-mail em lugar nenhum do funil, então a autorização não pode citá-lo. As duas frases acima são as mesmas de `index.html` (bloco `.finalidade` e `.optin`); mudar uma sem a outra faz as superfícies divergirem.
 
 ---
 

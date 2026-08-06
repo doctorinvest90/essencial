@@ -328,6 +328,55 @@ function termoProibidoEncontrado(texto) {
   );
 }
 
+// Every question screen needs a way forward that is not "change your answer".
+//
+// Picking an option advances on its own, but that is a `change` listener, and
+// `change` does not fire when a visitor comes back and clicks the SAME option
+// (the checkedness does not move). Without a button on the screen, Back is a
+// dead end whose only exit is recording an answer the visitor does not mean.
+// Reading the real HTML is what catches a 13th question added later without
+// one.
+{
+  const html = readFileSync(new URL("../../index.html", import.meta.url), "utf8");
+  const telas = [...html.matchAll(/<section\b[^>]*\bclass="tela[^"]*"[^>]*>([\s\S]*?)<\/section>/g)]
+    .map((m) => m[1]);
+
+  const comPergunta = telas.filter((corpo) => /\bname="q\d+"/.test(corpo));
+  assert.equal(
+    comPergunta.length,
+    12,
+    `esperava 12 telas de pergunta no index.html, achou ${comPergunta.length}`
+  );
+  for (const corpo of comPergunta) {
+    const pergunta = /\bname="(q\d+)"/.exec(corpo)[1];
+    const botao = /<button\b[^>]*\bdata-avancar\b[^>]*>/.exec(corpo);
+    assert.ok(botao, `a tela de ${pergunta} não tem botão de avançar: quem volta nela fica preso`);
+    assert.ok(
+      /\bdisabled\b/.test(botao[0]),
+      `o botão de avançar de ${pergunta} nasce habilitado, então dá para pular a pergunta sem responder`
+    );
+  }
+
+  // The capture screen already has its own submit; a second forward button
+  // there would jump over the form (and over the lead).
+  const captura = telas.find((corpo) => corpo.includes('id="form-captura"'));
+  assert.ok(captura, "tela de captura não encontrada no index.html");
+  assert.ok(
+    !/data-avancar/.test(captura),
+    "a tela de captura ganhou um botão de avançar além do submit"
+  );
+
+  // The button only unlocks through mostrar(). If that call goes away the
+  // screens keep their buttons and they stay disabled forever, which is the
+  // same dead end with extra steps. Textual check: it anchors the two names
+  // that have to keep existing together, not the flow itself.
+  const fonteQuiz = readFileSync(new URL("./quiz.js", import.meta.url), "utf8");
+  assert.ok(
+    /function sincronizarAvanco\(/.test(fonteQuiz) && /sincronizarAvanco\(proxima\)/.test(fonteQuiz),
+    "mostrar() não sincroniza mais o botão de avançar: pergunta respondida ficaria com o botão desabilitado para sempre"
+  );
+}
+
 // The lead POST and the funnel beacon only fire on the live domain, so a page
 // opened on localhost, in a fork or from a copied file never writes a real
 // person into the production funnel (Task 13b subscribes these leads to a
@@ -373,8 +422,8 @@ function termoProibidoEncontrado(texto) {
   );
 }
 
-// The 5 funnel steps (task-7-brief.md) are 5 literal (page, event) pairs
-// passed to enviarBeacon at the call sites in quiz.js and vsl.js. The
+// The funnel steps (task-7-brief.md) are literal (page, event) pairs passed to
+// enviarBeacon at the call sites in quiz.js, vsl.js and plano.html. The
 // backend only accepts event "view" or "checkout_click" (main.py
 // FunnelEventIn) and returns 422 on anything else, so a renamed page or a
 // stray event would make the backend reject the beacon and a step would go
@@ -387,24 +436,33 @@ function termoProibidoEncontrado(texto) {
     "essencial-quiz-done": "view",
     "essencial-vsl": "view",
     "essencial-vsl-offer": "view",
+    "essencial-plano": "view",
     essencial: "checkout_click",
   };
   const EVENTOS_VALIDOS_BACKEND = new Set(["view", "checkout_click"]);
 
-  const fonteQuiz = readFileSync(new URL("./quiz.js", import.meta.url), "utf8");
-  const fonteVsl = readFileSync(new URL("./vsl.js", import.meta.url), "utf8");
+  const fontes = [
+    ["quiz.js", readFileSync(new URL("./quiz.js", import.meta.url), "utf8")],
+    ["vsl.js", readFileSync(new URL("./vsl.js", import.meta.url), "utf8")],
+    ["plano.html", readFileSync(new URL("../../plano.html", import.meta.url), "utf8")],
+  ];
 
   const chamadas = [];
   const CHAMADA_RE = /enviarBeacon\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*\)/g;
-  for (const [arquivo, fonte] of [["quiz.js", fonteQuiz], ["vsl.js", fonteVsl]]) {
+  for (const [arquivo, fonte] of fontes) {
     for (const m of fonte.matchAll(CHAMADA_RE)) {
       chamadas.push({ arquivo, page: m[1], event: m[2] });
     }
   }
 
-  assert.equal(chamadas.length, 5, `esperava 5 chamadas a enviarBeacon no total (quiz.js + vsl.js), achou ${chamadas.length}`);
+  assert.equal(
+    chamadas.length,
+    7,
+    `esperava 7 chamadas a enviarBeacon no total (quiz.js + vsl.js + plano.html), achou ${chamadas.length}`
+  );
 
   const pagesVistas = new Set();
+  const paresVistos = new Set();
   for (const { arquivo, page, event } of chamadas) {
     assert.ok(
       EVENTOS_VALIDOS_BACKEND.has(event),
@@ -412,20 +470,36 @@ function termoProibidoEncontrado(texto) {
     );
     assert.ok(
       Object.prototype.hasOwnProperty.call(PASSOS_ESPERADOS, page),
-      `${arquivo} manda page "${page}", que não está nos 5 passos da tabela`
+      `${arquivo} manda page "${page}", que não está na tabela de passos`
     );
     assert.equal(
       event,
       PASSOS_ESPERADOS[page],
       `page "${page}" tem que mandar event "${PASSOS_ESPERADOS[page]}", ${arquivo} manda "${event}"`
     );
-    assert.ok(!pagesVistas.has(page), `page "${page}" chamada mais de uma vez`);
+    // "essencial"/checkout_click is the same funnel step reached from two
+    // pages (/vsl and /plano), so it is the one page allowed in two files.
+    // Twice inside the SAME file would be double counting.
+    const par = `${arquivo}:${page}`;
+    assert.ok(!paresVistos.has(par), `page "${page}" chamada mais de uma vez em ${arquivo}`);
+    paresVistos.add(par);
     pagesVistas.add(page);
   }
   assert.deepEqual(
     pagesVistas,
     new Set(Object.keys(PASSOS_ESPERADOS)),
-    "os 5 passos da tabela têm que aparecer, cada um exatamente uma vez"
+    "todos os passos da tabela têm que aparecer pelo menos uma vez"
+  );
+  // /plano only reaches production through the shared module: an inline copy
+  // of the sendBeacon call there would skip the domain guard.
+  const fontePlano = fontes.find(([nome]) => nome === "plano.html")[1];
+  assert.ok(
+    /from\s+["'][^"']*beacon\.mjs["']/.test(fontePlano),
+    "plano.html não importa o beacon compartilhado de beacon.mjs"
+  );
+  assert.ok(
+    !/navigator\.sendBeacon/.test(fontePlano),
+    "plano.html chama sendBeacon direto, fora da guarda de domínio de beacon.mjs"
   );
 }
 

@@ -46,9 +46,24 @@ function mostrar(alvo) {
   telas[indice].classList.remove("ativa");
   indice = alvo;
   proxima.classList.add("ativa");
+  sincronizarAvanco(proxima);
   atualizarProgresso(proxima);
   window.scrollTo(0, 0);
   proxima.focus({ preventScroll: true });
+}
+
+// Question screens ship their "Continuar" button disabled and it only unlocks
+// once that question has an answer. Without it the Back button is a dead end:
+// re-picking the SAME option fires no `change` (the checkedness does not move),
+// so the only way forward would be recording an answer the visitor does not
+// mean. The question name is read off the screen's own radios instead of a
+// list here, for the same reason the option ids are not declared in this file.
+function sincronizarAvanco(tela) {
+  const botao = tela.querySelector("[data-avancar]");
+  if (!botao) return;
+  const radio = tela.querySelector('input[type="radio"]');
+  if (!radio) return; // content screens have nothing to answer
+  botao.disabled = respostas[radio.name] === undefined;
 }
 
 function atualizarProgresso(tela) {
