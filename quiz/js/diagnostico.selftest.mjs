@@ -96,20 +96,51 @@ const ok = { q1: "sei", q2: "6mais", q3: "nenhuma", q4: "seguro_sei", q5: "nao_t
   assert.deepEqual(gapsVistos, new Set(["emordem", "acima", "igual", "abaixo"]));
 }
 
+// Um diag por template de copy (DEGRAUS.A/B/C/D + EM_ORDEM), reusado pelas
+// duas guardas abaixo.
+const casosCincoTemplates = [
+  diagnosticar({ ...ok, q2: "menos1", q10: "C" }),
+  diagnosticar({ ...ok, q5: "tudo_misturado", q10: "B" }),
+  diagnosticar({ ...ok, q6: "poupanca", q10: "A" }),
+  diagnosticar({ ...ok, q8: "nunca" }),
+  diagnosticar(ok),
+];
+
 // textoResultado: nenhuma string produzida contém travessão (regra de estilo da casa)
 {
-  const diags = [
-    diagnosticar({ ...ok, q2: "menos1", q10: "C" }),
-    diagnosticar({ ...ok, q5: "tudo_misturado", q10: "B" }),
-    diagnosticar({ ...ok, q6: "poupanca", q10: "A" }),
-    diagnosticar({ ...ok, q8: "nunca" }),
-    diagnosticar(ok),
-  ];
-  for (const diag of diags) {
+  for (const diag of casosCincoTemplates) {
     const texto = textoResultado(diag);
     const strings = [texto.titulo, texto.porque, texto.primeiroPasso, texto.cta.label, texto.cta.href, ...texto.abertos];
     for (const s of strings) {
       assert.ok(!s.includes("—"), `travessão encontrado em: "${s}"`);
+    }
+  }
+}
+
+// textoResultado: nenhuma string produzida cita ativo, promete rentabilidade
+// ou afirma interpretação tributária (regra regulatória, §4.9). Blocklist,
+// não NLP: word-boundary pra não pegar "ação" dentro de "organização" nem
+// "render" dentro de "renda".
+{
+  const termosProibidos = [
+    "CDB", "LCI", "LCA", "tesouro", "ação", "ações", "ETF", "FII", "fundo", "fundos", "previdência",
+    "render", "rendimento", "rentabilidade", "retorno", "valorizar", "ganho", "% ao ano",
+    "isento", "dedutível", "restituição",
+  ];
+  const termoProibidoEncontrado = (texto) => {
+    const lower = texto.toLowerCase();
+    return termosProibidos.find((termo) =>
+      /^[a-zà-ÿ]+$/i.test(termo)
+        ? new RegExp(`\\b${termo.toLowerCase()}\\b`, "i").test(lower)
+        : lower.includes(termo.toLowerCase())
+    );
+  };
+  for (const diag of casosCincoTemplates) {
+    const texto = textoResultado(diag);
+    const strings = [texto.titulo, texto.porque, texto.primeiroPasso, texto.cta.label, ...texto.abertos];
+    for (const s of strings) {
+      const achado = termoProibidoEncontrado(s);
+      assert.ok(!achado, `termo proibido "${achado}" encontrado em: "${s}"`);
     }
   }
 }

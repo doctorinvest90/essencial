@@ -7,18 +7,19 @@
 /** @typedef {"A"|"B"|"C"|"D"} Degrau */
 /** @typedef {{ real: Degrau|null, energia: Degrau, abertos: Degrau[], motivos: string[], gap: "acima"|"igual"|"abaixo"|"emordem", faixa: "ate100"|"100a300"|"300a500"|"acima500" }} Diag */
 
-// WhatsApp CTA for faixa "acima500" (patrimônio acima de R$500k: candidato a
-// consultoria, não ao produto de R$997/ano, spec D10). Mensagem isolada
-// numa constante nomeada para trocar sem mexer no resto do arquivo.
+// WhatsApp CTA for faixa "acima500" (over R$500k in assets: a consultoria
+// candidate, not the R$997/year product, spec D10). Message text lives in
+// its own named constant so it's easy to swap without touching the rest of
+// the file.
 const WHATSAPP_CONSULTORIA_MENSAGEM =
   "Fiz o diagnóstico no site e quero falar sobre a consultoria.";
 const WHATSAPP_CONSULTORIA_HREF = `https://wa.me/551151923850?text=${encodeURIComponent(WHATSAPP_CONSULTORIA_MENSAGEM)}`;
 
-// Per-degrau copy: por que a ordem importa mais que o ativo, e a única ação
-// de organização a fazer primeiro. Regras duras (regulatórias, não de
-// estilo): nenhum ativo citado, nenhuma promessa ou projeção de
-// rentabilidade, nenhuma interpretação tributária afirmada, primeiroPasso é
-// sempre organização, nunca instrução de compra.
+// Per-degrau copy: why order matters more than the asset, and the one
+// organizing action to take first. Hard rules (regulatory, not stylistic):
+// no asset named, no return promised or projected, no tax interpretation
+// asserted, primeiroPasso is always an organizing action, never a buy
+// instruction.
 const DEGRAUS = {
   A: {
     porque:
@@ -46,20 +47,25 @@ const DEGRAUS = {
   },
 };
 
-// real === null: nada aberto. Ainda precisa de porque + primeiroPasso:
-// elogio e o próximo passo (manter), não uma cópia vazia. Quem está em
-// ordem continua sendo bom comprador, porque quer manter (spec D5).
+// real === null: nothing open. Still needs porque + primeiroPasso: praise
+// plus the next step (manter), not empty copy. Someone in order is still a
+// good buyer, because they want to stay that way (spec D5).
 const EM_ORDEM = {
   porque:
     "Sua ordem está de pé porque cada degrau foi resolvido antes do próximo. Isso é raro, e é o que mantém o resultado protegido quando o cenário muda.",
   primeiroPasso: "Marque a próxima revisão da carteira inteira, para a ordem continuar de pé.",
 };
 
+// Anatomy name shown next to each degrau letter in the "acima" title (spec
+// D4, updated wording confirmed in the Task 3 review: the letter alone
+// doesn't decode for someone who closes the tab and comes back later).
+const NOMES = { A: "Via aérea", B: "Ventilação", C: "Circulação", D: "Reavaliação" };
+
 /** @param {Diag} diag */
 function tituloPorGap(diag) {
   switch (diag.gap) {
     case "acima":
-      return `Você está no ${diag.energia} com o ${diag.real} aberto.`;
+      return `Você está no degrau ${diag.energia} (${NOMES[diag.energia]}) com o ${diag.real} (${NOMES[diag.real]}) ainda aberto.`;
     case "igual":
       return "Você está no degrau certo, e travado nele.";
     case "abaixo":
@@ -72,8 +78,8 @@ function tituloPorGap(diag) {
 
 /** @param {Diag} diag */
 function ctaPor(diag) {
-  // Acima de R$500k é candidato a consultoria, não ao produto de R$997/ano
-  // (spec D10). Vale mesmo quando o diagnóstico está em ordem.
+  // Over R$500k is a consultoria candidate, not the R$997/year product
+  // (spec D10). Applies even when the diagnosis is in order.
   if (diag.faixa === "acima500") {
     return { label: "Falar sobre a consultoria", href: WHATSAPP_CONSULTORIA_HREF };
   }
