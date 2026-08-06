@@ -238,17 +238,17 @@ function termoProibidoEncontrado(texto) {
   }
 }
 
-// Contrato index.html <-> OPENS.
+// index.html <-> OPENS contract.
 //
-// O acoplamento silencioso desta feature: os `value` dos inputs de cada
-// pergunta SÃO as chaves de OPENS. Um id divergente não quebra nada visível,
-// a pergunta simplesmente para de abrir o degrau e o diagnóstico sai errado
-// sem sinal nenhum. Este bloco é o único teste que pega isso.
+// The silent coupling in this feature: the `value` of each question's inputs
+// ARE the keys of OPENS. A diverging id breaks nothing visible, the question
+// just stops opening its degrau and the diagnosis comes out wrong with no
+// signal at all. This block is the only test that catches it.
 {
   const html = readFileSync(new URL("../../index.html", import.meta.url), "utf8");
 
-  // Um input por opção: name="qN" e value="...", em qualquer ordem de atributo.
-  // Campos sem name qN (nome, e-mail, opt-in) ficam de fora de propósito.
+  // One input per option: name="qN" plus value="...", attributes in any order.
+  // Fields without a qN name (nome, e-mail, opt-in) are left out on purpose.
   const opcoesPorPergunta = {};
   for (const [tag, pergunta] of html.matchAll(/<input\b[^>]*\bname="(q\d+)"[^>]*>/g)) {
     const achado = /\bvalue="([^"]*)"/.exec(tag);
@@ -257,8 +257,8 @@ function termoProibidoEncontrado(texto) {
     (opcoesPorPergunta[pergunta] ??= []).push(achado[1]);
   }
 
-  // O quiz são 12 perguntas. Uma a mais ou a menos aqui é pergunta que o
-  // motor nunca vai ler, ou pergunta do motor que sumiu da tela.
+  // The quiz is 12 questions. One more or one less here means either a
+  // question the engine never reads, or an engine question gone from screen.
   const esperadas = Array.from({ length: 12 }, (_, i) => `q${i + 1}`);
   assert.deepEqual(
     new Set(Object.keys(opcoesPorPergunta)),
@@ -270,8 +270,8 @@ function termoProibidoEncontrado(texto) {
     assert.equal(new Set(ids).size, ids.length, `${pergunta} tem value repetido no HTML`);
   }
 
-  // Ida: toda regra de OPENS tem que achar o value dela no HTML, senão é
-  // regra morta (o degrau nunca abre por essa resposta).
+  // Forward: every OPENS rule must find its value in the HTML, otherwise it
+  // is a dead rule (the degrau never opens through that answer).
   for (const [pergunta, regra] of Object.entries(OPENS)) {
     const noHtml = opcoesPorPergunta[pergunta] ?? [];
     for (const id of regra.ids) {
@@ -282,8 +282,8 @@ function termoProibidoEncontrado(texto) {
     }
   }
 
-  // Volta: um id que OPENS conhece não pode aparecer sob outra pergunta no
-  // HTML (copiar e colar entre telas abriria o degrau errado).
+  // Backward: an id OPENS knows must not show up under another question in
+  // the HTML (copy-paste between screens would open the wrong degrau).
   const donoDoId = new Map();
   for (const [pergunta, regra] of Object.entries(OPENS)) {
     for (const id of regra.ids) donoDoId.set(id, pergunta);
@@ -298,9 +298,9 @@ function termoProibidoEncontrado(texto) {
     }
   }
 
-  // q10 (energia), q11 (faixa) e q12 (urgência) não passam por OPENS: as duas
-  // primeiras entram cruas no diagnóstico, a terceira só no registro do lead.
-  // Precisam da própria checagem de consistência.
+  // q10 (energia), q11 (faixa) and q12 (urgência) never go through OPENS: the
+  // first two land raw in the diagnosis, the third only in the lead record.
+  // They need a consistency check of their own.
   assert.deepEqual(new Set(opcoesPorPergunta.q10), new Set(["A", "B", "C", "D"]));
   assert.deepEqual(
     new Set(opcoesPorPergunta.q11),
@@ -320,12 +320,36 @@ function termoProibidoEncontrado(texto) {
   );
   assert.deepEqual(trocamOCta, ["acima500"], "só a faixa acima500 pode virar o CTA de consultoria");
 
-  // A frase da saída de cima não existe em resultado.mjs: quem é dono dela é
-  // a tela. Se sumir do HTML, o botão da consultoria fica sem explicação.
+  // The top-exit line does not exist in resultado.mjs: the screen owns it. If
+  // it disappears from the HTML, the consultoria button loses its explanation.
   assert.ok(
     html.includes("Seu caso passou do Essencial."),
     "a frase da saída de cima sumiu do index.html"
   );
+}
+
+// The lead POST only fires on the live domain, so a page opened on localhost,
+// in a fork or from a copied file never writes a real person into the
+// production funnel (Task 13b subscribes these leads to a real list). The
+// pattern is read out of quiz.js: a second copy here would keep passing while
+// production quietly stopped capturing leads.
+{
+  const fonte = readFileSync(new URL("./quiz.js", import.meta.url), "utf8");
+  const achado = /const DOMINIO_DE_PRODUCAO = \/(.*)\/;/.exec(fonte);
+  assert.ok(achado, "quiz.js não declara mais DOMINIO_DE_PRODUCAO numa linha só");
+  assert.ok(
+    fonte.includes("DOMINIO_DE_PRODUCAO.test("),
+    "DOMINIO_DE_PRODUCAO existe mas ninguém aplica a guarda"
+  );
+  const dominio = new RegExp(achado[1]);
+
+  for (const host of ["essencial.drheliobarros.com.br", "drheliobarros.com.br", "www.drheliobarros.com.br"]) {
+    assert.ok(dominio.test(host), `"${host}" é produção e tem que enviar o lead`);
+  }
+  for (const host of ["localhost", "127.0.0.1", "", "essencial-lp.github.io",
+                      "naodrheliobarros.com.br", "drheliobarros.com.br.exemplo.com"]) {
+    assert.ok(!dominio.test(host), `"${host}" não pode gravar lead em produção`);
+  }
 }
 
 console.log("diagnostico.selftest ok");

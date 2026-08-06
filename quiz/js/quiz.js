@@ -11,6 +11,11 @@ import { textoResultado } from "./resultado.mjs";
 const ESPERA_MS = 2500; // "analisando" screen, per copy.md
 const AVANCO_MS = 220; // pause after a tap, so the selection is visible before the screen turns
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/; // same rule the backend validator applies
+// The lead POST carries a real person's name and e-mail into a real list, so it
+// only fires on the live domain: localhost, forks and copies of this file must
+// never write into the production funnel. Same rule the funnel beacon uses.
+// The leading (^|\.) is what keeps a lookalike host out.
+const DOMINIO_DE_PRODUCAO = /(^|\.)drheliobarros\.com\.br$/;
 
 const cfg = window.DI_CONFIG || {};
 const telas = Array.from(document.querySelectorAll(".tela"));
@@ -138,6 +143,12 @@ function guardarDiag(diag) {
 // invented here.
 function enviarLead(diag) {
   if (!cfg.leadUrl) return;
+  if (!DOMINIO_DE_PRODUCAO.test(window.location.hostname)) {
+    console.info(
+      `quiz: lead não enviado porque "${window.location.hostname}" está fora de drheliobarros.com.br. É de propósito, para teste local não gravar lead de verdade. O diagnóstico aparece normalmente.`
+    );
+    return;
+  }
   const params = new URLSearchParams(window.location.search);
   const corpo = {
     nome: campoNome.value.trim(),
