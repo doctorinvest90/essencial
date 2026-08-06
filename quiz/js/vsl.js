@@ -1,6 +1,10 @@
-// Logic for /vsl: gates the offer behind accumulated video play time, and
-// tags the checkout with the quiz degrau when a session exists. Plain script
-// (no imports needed), loaded after config.js, same pattern as quiz.js.
+// Logic for /vsl: gates the offer behind accumulated video play time, tags
+// the checkout with the quiz degrau when a session exists, and beacons the
+// 3 funnel steps that happen on this page. Loaded as a module (like quiz.js)
+// so it can import the shared beacon from beacon.mjs instead of duplicating
+// it; the script tag still sits at the end of body after config.js, so
+// timing is unchanged.
+import { enviarBeacon } from "./beacon.mjs";
 
 const cfg = window.DI_CONFIG || {};
 
@@ -9,6 +13,8 @@ const avisoVideo = document.getElementById("aviso-video");
 const oferta = document.getElementById("oferta");
 const ctaAnual = document.getElementById("cta-anual");
 const ctaTrimestral = document.getElementById("cta-trimestral");
+
+enviarBeacon("essencial-vsl", "view");
 
 // --- Offer reveal: accumulated play time, never wall time -----------------
 // `?offer=N` overrides the configured delay for manual testing. The 128 in
@@ -27,6 +33,7 @@ let ofertaVisivel = false;
 function revelarOferta() {
   if (ofertaVisivel) return;
   ofertaVisivel = true;
+  enviarBeacon("essencial-vsl-offer", "view");
   oferta.hidden = false;
   // Two steps so the browser paints the hidden->block change before the
   // opacity transition starts; flipping both in the same frame skips the
@@ -98,3 +105,12 @@ function comDegrau(checkoutUrl, degrau) {
 const degrau = lerDegrauDoQuiz();
 if (cfg.checkoutAnual) ctaAnual.href = comDegrau(cfg.checkoutAnual, degrau);
 if (cfg.checkoutTrimestral) ctaTrimestral.href = comDegrau(cfg.checkoutTrimestral, degrau);
+
+// Both checkout options are the same funnel step. sendBeacon (inside
+// enviarBeacon) is what makes this survive the navigation the click
+// triggers right after, so no preventDefault/delay is needed here.
+function onCheckoutClick() {
+  enviarBeacon("essencial", "checkout_click");
+}
+ctaAnual.addEventListener("click", onCheckoutClick);
+ctaTrimestral.addEventListener("click", onCheckoutClick);

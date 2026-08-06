@@ -7,15 +7,14 @@
 // the same id list would be a third place to drift.
 import { diagnosticar } from "./diagnostico.mjs";
 import { textoResultado } from "./resultado.mjs";
+// DOMINIO_DE_PRODUCAO guards both the lead POST below and the funnel beacon
+// in beacon.mjs: one regex, imported by both, instead of two copies that can
+// drift out of sync.
+import { DOMINIO_DE_PRODUCAO, enviarBeacon } from "./beacon.mjs";
 
 const ESPERA_MS = 2500; // "analisando" screen, per copy.md
 const AVANCO_MS = 220; // pause after a tap, so the selection is visible before the screen turns
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/; // same rule the backend validator applies
-// The lead POST carries a real person's name and e-mail into a real list, so it
-// only fires on the live domain: localhost, forks and copies of this file must
-// never write into the production funnel. Same rule the funnel beacon uses.
-// The leading (^|\.) is what keeps a lookalike host out.
-const DOMINIO_DE_PRODUCAO = /(^|\.)drheliobarros\.com\.br$/;
 
 const cfg = window.DI_CONFIG || {};
 const telas = Array.from(document.querySelectorAll(".tela"));
@@ -114,6 +113,7 @@ form.addEventListener("submit", (evento) => {
   const diag = diagnosticar(respostas);
   guardarDiag(diag);
   enviarLead(diag); // fire and forget: the network never holds the result back
+  enviarBeacon("essencial-quiz-done", "view");
   renderResultado(diag);
   mostrar(indiceDe("tela-analisando"));
   window.setTimeout(() => mostrar(indiceDe("tela-resultado")), ESPERA_MS);
@@ -200,4 +200,5 @@ function renderResultado(diag) {
   cta.href = texto.cta.href;
 }
 
+enviarBeacon("essencial-quiz", "view");
 mostrar(0);

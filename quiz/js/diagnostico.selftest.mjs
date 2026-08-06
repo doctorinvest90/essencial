@@ -328,28 +328,105 @@ function termoProibidoEncontrado(texto) {
   );
 }
 
-// The lead POST only fires on the live domain, so a page opened on localhost,
-// in a fork or from a copied file never writes a real person into the
-// production funnel (Task 13b subscribes these leads to a real list). The
-// pattern is read out of quiz.js: a second copy here would keep passing while
-// production quietly stopped capturing leads.
+// The lead POST and the funnel beacon only fire on the live domain, so a page
+// opened on localhost, in a fork or from a copied file never writes a real
+// person into the production funnel (Task 13b subscribes these leads to a
+// real list) nor counts a fake step. The guard now lives once in beacon.mjs
+// and is imported by quiz.js (lead POST + its own beacon calls) and vsl.js
+// (its beacon calls); a second copy in either file would keep this test
+// passing while production quietly drifted between the two rules.
 {
-  const fonte = readFileSync(new URL("./quiz.js", import.meta.url), "utf8");
-  const achado = /const DOMINIO_DE_PRODUCAO = \/(.*)\/;/.exec(fonte);
-  assert.ok(achado, "quiz.js não declara mais DOMINIO_DE_PRODUCAO numa linha só");
+  const fonteBeacon = readFileSync(new URL("./beacon.mjs", import.meta.url), "utf8");
+  const achado = /const DOMINIO_DE_PRODUCAO = \/(.*)\/;/.exec(fonteBeacon);
+  assert.ok(achado, "beacon.mjs não declara mais DOMINIO_DE_PRODUCAO numa linha só");
   assert.ok(
-    fonte.includes("DOMINIO_DE_PRODUCAO.test("),
-    "DOMINIO_DE_PRODUCAO existe mas ninguém aplica a guarda"
+    fonteBeacon.includes("DOMINIO_DE_PRODUCAO.test("),
+    "DOMINIO_DE_PRODUCAO existe em beacon.mjs mas ninguém aplica a guarda lá dentro"
   );
   const dominio = new RegExp(achado[1]);
 
   for (const host of ["essencial.drheliobarros.com.br", "drheliobarros.com.br", "www.drheliobarros.com.br"]) {
-    assert.ok(dominio.test(host), `"${host}" é produção e tem que enviar o lead`);
+    assert.ok(dominio.test(host), `"${host}" é produção e tem que enviar lead e beacon`);
   }
   for (const host of ["localhost", "127.0.0.1", "", "essencial-lp.github.io",
                       "naodrheliobarros.com.br", "drheliobarros.com.br.exemplo.com"]) {
-    assert.ok(!dominio.test(host), `"${host}" não pode gravar lead em produção`);
+    assert.ok(!dominio.test(host), `"${host}" não pode gravar lead nem beacon em produção`);
   }
+
+  // Neither caller may declare its own copy of the regex; both have to pull
+  // it (directly or via enviarBeacon) from beacon.mjs.
+  const fonteQuiz = readFileSync(new URL("./quiz.js", import.meta.url), "utf8");
+  const fonteVsl = readFileSync(new URL("./vsl.js", import.meta.url), "utf8");
+  for (const [nome, fonte] of [["quiz.js", fonteQuiz], ["vsl.js", fonteVsl]]) {
+    assert.ok(
+      !/const DOMINIO_DE_PRODUCAO\s*=/.test(fonte),
+      `${nome} declara uma cópia própria de DOMINIO_DE_PRODUCAO em vez de importar de beacon.mjs`
+    );
+    assert.ok(
+      /from\s+["']\.\/beacon\.mjs["']/.test(fonte),
+      `${nome} não importa de beacon.mjs`
+    );
+  }
+  assert.ok(
+    fonteQuiz.includes("DOMINIO_DE_PRODUCAO.test("),
+    "quiz.js não aplica mais a guarda no envio do lead"
+  );
+}
+
+// The 5 funnel steps (task-7-brief.md) are 5 literal (page, event) pairs
+// passed to enviarBeacon at the call sites in quiz.js and vsl.js. The
+// backend only accepts event "view" or "checkout_click" (main.py
+// FunnelEventIn) and returns 422 on anything else, so a renamed page or a
+// stray event would make the backend reject the beacon and a step would go
+// missing with no visible error, the failure mode this test exists to catch.
+// This reads the real call sites instead of a copy of the table, so a future
+// edit that drifts from the table breaks this test, not the funnel.
+{
+  const PASSOS_ESPERADOS = {
+    "essencial-quiz": "view",
+    "essencial-quiz-done": "view",
+    "essencial-vsl": "view",
+    "essencial-vsl-offer": "view",
+    essencial: "checkout_click",
+  };
+  const EVENTOS_VALIDOS_BACKEND = new Set(["view", "checkout_click"]);
+
+  const fonteQuiz = readFileSync(new URL("./quiz.js", import.meta.url), "utf8");
+  const fonteVsl = readFileSync(new URL("./vsl.js", import.meta.url), "utf8");
+
+  const chamadas = [];
+  const CHAMADA_RE = /enviarBeacon\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*\)/g;
+  for (const [arquivo, fonte] of [["quiz.js", fonteQuiz], ["vsl.js", fonteVsl]]) {
+    for (const m of fonte.matchAll(CHAMADA_RE)) {
+      chamadas.push({ arquivo, page: m[1], event: m[2] });
+    }
+  }
+
+  assert.equal(chamadas.length, 5, `esperava 5 chamadas a enviarBeacon no total (quiz.js + vsl.js), achou ${chamadas.length}`);
+
+  const pagesVistas = new Set();
+  for (const { arquivo, page, event } of chamadas) {
+    assert.ok(
+      EVENTOS_VALIDOS_BACKEND.has(event),
+      `${arquivo} manda event "${event}" pra page "${page}", mas o backend só aceita view/checkout_click (422 em produção)`
+    );
+    assert.ok(
+      Object.prototype.hasOwnProperty.call(PASSOS_ESPERADOS, page),
+      `${arquivo} manda page "${page}", que não está nos 5 passos da tabela`
+    );
+    assert.equal(
+      event,
+      PASSOS_ESPERADOS[page],
+      `page "${page}" tem que mandar event "${PASSOS_ESPERADOS[page]}", ${arquivo} manda "${event}"`
+    );
+    assert.ok(!pagesVistas.has(page), `page "${page}" chamada mais de uma vez`);
+    pagesVistas.add(page);
+  }
+  assert.deepEqual(
+    pagesVistas,
+    new Set(Object.keys(PASSOS_ESPERADOS)),
+    "os 5 passos da tabela têm que aparecer, cada um exatamente uma vez"
+  );
 }
 
 console.log("diagnostico.selftest ok");
