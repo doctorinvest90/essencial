@@ -13,7 +13,9 @@
 // q5 is the deliberate trap: "não tenho PJ" (id nao_tenho_pj) means the
 // question doesn't apply, not that it's unresolved. It must never appear in
 // q5's `ids`. Not applicable never counts as open.
-const OPENS = {
+// Exported so the selftest can check it against the `value` attributes in
+// index.html. Nothing else reads it from outside.
+export const OPENS = {
   q1: { degrau: "A", ids: ["varia_demais", "nao_faco_ideia"], motivo: "Não sabe quanto sobra por mês" },
   q2: { degrau: "A", ids: ["menos1", "1a3"], motivo: "Reserva abaixo de 3 meses" },
   q3: { degrau: "A", ids: ["sim_incomoda"], motivo: "Dívida com juros acima de 1% ao mês" },

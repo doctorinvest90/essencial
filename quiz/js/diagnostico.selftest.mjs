@@ -1,10 +1,13 @@
 import assert from "node:assert/strict";
-import { diagnosticar } from "./diagnostico.mjs";
+import { readFileSync } from "node:fs";
+import { diagnosticar, OPENS } from "./diagnostico.mjs";
 import { textoResultado } from "./resultado.mjs";
 
-const ok = { q1: "sei", q2: "6mais", q3: "nenhuma", q4: "seguro_sei", q5: "nao_tenho_pj",
-             q6: "carteira_junto", q7: "todo_mes", q8: "3meses", q9: "processo",
-             q10: "D", q11: "100a300", q12: "3meses" };
+// Every id here is the real option id emitted by index.html (the guard at the
+// bottom of this file proves it). Answers chosen so nothing opens.
+const ok = { q1: "sei_numero", q2: "mais6", q3: "nenhuma", q4: "seguro_sei_quanto", q5: "nao_tenho_pj",
+             q6: "carteira_com_alguem", q7: "todo_mes", q8: "ultimos_3_meses", q9: "tenho_processo",
+             q10: "D", q11: "100a300", q12: "tres_meses" };
 
 // tudo em ordem: nenhum degrau aberto
 {
@@ -233,6 +236,96 @@ function termoProibidoEncontrado(texto) {
       assert.ok(!achado, `termo proibido "${achado}" encontrado em: "${s}"`);
     }
   }
+}
+
+// Contrato index.html <-> OPENS.
+//
+// O acoplamento silencioso desta feature: os `value` dos inputs de cada
+// pergunta SÃO as chaves de OPENS. Um id divergente não quebra nada visível,
+// a pergunta simplesmente para de abrir o degrau e o diagnóstico sai errado
+// sem sinal nenhum. Este bloco é o único teste que pega isso.
+{
+  const html = readFileSync(new URL("../../index.html", import.meta.url), "utf8");
+
+  // Um input por opção: name="qN" e value="...", em qualquer ordem de atributo.
+  // Campos sem name qN (nome, e-mail, opt-in) ficam de fora de propósito.
+  const opcoesPorPergunta = {};
+  for (const [tag, pergunta] of html.matchAll(/<input\b[^>]*\bname="(q\d+)"[^>]*>/g)) {
+    const achado = /\bvalue="([^"]*)"/.exec(tag);
+    assert.ok(achado, `input de ${pergunta} sem value: ${tag}`);
+    assert.ok(achado[1].length > 0, `input de ${pergunta} com value vazio: ${tag}`);
+    (opcoesPorPergunta[pergunta] ??= []).push(achado[1]);
+  }
+
+  // O quiz são 12 perguntas. Uma a mais ou a menos aqui é pergunta que o
+  // motor nunca vai ler, ou pergunta do motor que sumiu da tela.
+  const esperadas = Array.from({ length: 12 }, (_, i) => `q${i + 1}`);
+  assert.deepEqual(
+    new Set(Object.keys(opcoesPorPergunta)),
+    new Set(esperadas),
+    "index.html tem que emitir exatamente q1..q12"
+  );
+
+  for (const [pergunta, ids] of Object.entries(opcoesPorPergunta)) {
+    assert.equal(new Set(ids).size, ids.length, `${pergunta} tem value repetido no HTML`);
+  }
+
+  // Ida: toda regra de OPENS tem que achar o value dela no HTML, senão é
+  // regra morta (o degrau nunca abre por essa resposta).
+  for (const [pergunta, regra] of Object.entries(OPENS)) {
+    const noHtml = opcoesPorPergunta[pergunta] ?? [];
+    for (const id of regra.ids) {
+      assert.ok(
+        noHtml.includes(id),
+        `OPENS.${pergunta} abre em "${id}", mas index.html não emite esse value`
+      );
+    }
+  }
+
+  // Volta: um id que OPENS conhece não pode aparecer sob outra pergunta no
+  // HTML (copiar e colar entre telas abriria o degrau errado).
+  const donoDoId = new Map();
+  for (const [pergunta, regra] of Object.entries(OPENS)) {
+    for (const id of regra.ids) donoDoId.set(id, pergunta);
+  }
+  for (const [pergunta, ids] of Object.entries(opcoesPorPergunta)) {
+    for (const id of ids) {
+      const dono = donoDoId.get(id);
+      assert.ok(
+        dono === undefined || dono === pergunta,
+        `"${id}" está em ${pergunta} no HTML, mas em OPENS pertence a ${dono}`
+      );
+    }
+  }
+
+  // q10 (energia), q11 (faixa) e q12 (urgência) não passam por OPENS: as duas
+  // primeiras entram cruas no diagnóstico, a terceira só no registro do lead.
+  // Precisam da própria checagem de consistência.
+  assert.deepEqual(new Set(opcoesPorPergunta.q10), new Set(["A", "B", "C", "D"]));
+  assert.deepEqual(
+    new Set(opcoesPorPergunta.q11),
+    new Set(["ate100", "100a300", "300a500", "acima500"])
+  );
+  assert.equal(opcoesPorPergunta.q12.length, 4, "q12 tem que ter as 4 opções de urgência");
+
+  for (const energia of opcoesPorPergunta.q10) {
+    assert.equal(
+      diagnosticar({ ...ok, q10: energia }).energia,
+      energia,
+      `value "${energia}" de q10 não vira o degrau de energia`
+    );
+  }
+  const trocamOCta = opcoesPorPergunta.q11.filter((faixa) =>
+    textoResultado(diagnosticar({ ...ok, q11: faixa })).cta.href.includes("wa.me")
+  );
+  assert.deepEqual(trocamOCta, ["acima500"], "só a faixa acima500 pode virar o CTA de consultoria");
+
+  // A frase da saída de cima não existe em resultado.mjs: quem é dono dela é
+  // a tela. Se sumir do HTML, o botão da consultoria fica sem explicação.
+  assert.ok(
+    html.includes("Seu caso passou do Essencial."),
+    "a frase da saída de cima sumiu do index.html"
+  );
 }
 
 console.log("diagnostico.selftest ok");
