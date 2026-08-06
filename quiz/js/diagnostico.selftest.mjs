@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { diagnosticar } from "./diagnostico.mjs";
+import { textoResultado } from "./resultado.mjs";
 
 const ok = { q1: "sei", q2: "6mais", q3: "nenhuma", q4: "seguro_sei", q5: "nao_tenho_pj",
              q6: "carteira_junto", q7: "todo_mes", q8: "3meses", q9: "processo",
@@ -50,6 +51,67 @@ const ok = { q1: "sei", q2: "6mais", q3: "nenhuma", q4: "seguro_sei", q5: "nao_t
   const d = diagnosticar({ q10: "C", q11: "ate100" });
   assert.equal(d.gap, "emordem");
   assert.equal(d.energia, "C");
+}
+
+// textoResultado: cada um dos 4 degraus reais produz título não vazio
+{
+  const casosPorDegrau = {
+    A: { ...ok, q2: "menos1" },
+    B: { ...ok, q5: "tudo_misturado" },
+    C: { ...ok, q6: "poupanca" },
+    D: { ...ok, q8: "nunca" },
+  };
+  for (const [degrau, respostas] of Object.entries(casosPorDegrau)) {
+    const diag = diagnosticar(respostas);
+    assert.equal(diag.real, degrau, `fixture não abriu o degrau ${degrau} esperado`);
+    assert.ok(textoResultado(diag).titulo.length > 0, `titulo vazio para degrau ${degrau}`);
+  }
+}
+
+// textoResultado: o caso em ordem (real === null) também produz título não vazio
+{
+  const diag = diagnosticar(ok);
+  assert.equal(diag.real, null);
+  assert.ok(textoResultado(diag).titulo.length > 0);
+}
+
+// textoResultado: faixa "acima500" sempre devolve o CTA de consultoria,
+// em todos os casos de gap, inclusive o em ordem
+{
+  const casosPorGap = [
+    ok, // emordem
+    { ...ok, q2: "menos1", q10: "C" }, // acima
+    { ...ok, q5: "tudo_misturado", q10: "B" }, // igual
+    { ...ok, q8: "nunca", q10: "A" }, // abaixo
+  ];
+  const gapsVistos = new Set();
+  for (const base of casosPorGap) {
+    const diag = diagnosticar({ ...base, q11: "acima500" });
+    assert.equal(diag.faixa, "acima500");
+    gapsVistos.add(diag.gap);
+    const texto = textoResultado(diag);
+    assert.equal(texto.cta.label, "Falar sobre a consultoria");
+    assert.ok(texto.cta.href.includes("wa.me"));
+  }
+  assert.deepEqual(gapsVistos, new Set(["emordem", "acima", "igual", "abaixo"]));
+}
+
+// textoResultado: nenhuma string produzida contém travessão (regra de estilo da casa)
+{
+  const diags = [
+    diagnosticar({ ...ok, q2: "menos1", q10: "C" }),
+    diagnosticar({ ...ok, q5: "tudo_misturado", q10: "B" }),
+    diagnosticar({ ...ok, q6: "poupanca", q10: "A" }),
+    diagnosticar({ ...ok, q8: "nunca" }),
+    diagnosticar(ok),
+  ];
+  for (const diag of diags) {
+    const texto = textoResultado(diag);
+    const strings = [texto.titulo, texto.porque, texto.primeiroPasso, texto.cta.label, texto.cta.href, ...texto.abertos];
+    for (const s of strings) {
+      assert.ok(!s.includes("—"), `travessão encontrado em: "${s}"`);
+    }
+  }
 }
 
 console.log("diagnostico.selftest ok");
