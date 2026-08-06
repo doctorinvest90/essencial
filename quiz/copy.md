@@ -178,15 +178,36 @@ Fonte de verdade do texto **antes** de virar HTML. Spec: `docs/superpowers/specs
 >
 > **Sem reserva, o imprevisto escolhe a hora da venda.**
 >
-> Na mesma pesquisa, diante de uma despesa inesperada de US$ 2.000 em 30 dias, **19% dos respondentes disseram que venderiam algo que possuem** para cobri-la.
+> Na mesma pesquisa, 1.255 respondentes foram perguntados **como** cobririam uma despesa inesperada de US$ 2.000 em 30 dias. Entre eles, **19% responderam que venderiam algo que possuem**.
+>
+> Quem já tinha dito que certamente não conseguiria levantar o valor não chegou a ser perguntado. Ou seja, o 19% sai de quem achava que daria conta.
 >
 > Investir com a base aberta funciona enquanto nada acontece. Quando acontece, a conta de curto prazo é paga com o que estava guardado para o longo, no mês que você não escolheu.
 >
-> O degrau A existe para tirar essa decisão das mãos do acaso.
->
-> *fonte: Lusardi, Schneider & Tufano (2011), Brookings Papers on Economic Activity · 2.148 respondentes, Estados Unidos, 2009*
+> *fonte: Lusardi, Schneider & Tufano (2011), Brookings Papers on Economic Activity · n = 1.255 respondentes perguntados sobre método de cobertura, Estados Unidos, 2009*
 >
 > **[ Continuar ]**
+
+<!--
+ALTERNATIVA DA TELA 10, sem número, para o portão do Hélio escolher.
+Trocar é substituir o bloco acima por este. Ganha de brinde: acaba a repetição
+de fonte entre a Tela 4 e a Tela 10, que hoje citam o mesmo estudo.
+
+> ### 🔹 A ordem
+>
+> **Sem reserva, o imprevisto escolhe a hora da venda.**
+>
+> Investir com a base aberta funciona enquanto nada acontece. Quando acontece, a conta de curto prazo é paga com o que estava guardado para o longo, no mês que você não escolheu.
+>
+> O e-book chama isso de regra de ordem em outro contexto: contrate a proteção primeiro, cancele o embutido depois, para não passar um dia descoberto. Vale igual aqui.
+>
+> O degrau A existe para tirar essa decisão das mãos do acaso.
+>
+> *fonte: A Tarifa Invisível do Médico, frente 07*
+>
+> **[ Continuar ]**
+-->
+
 
 ---
 
