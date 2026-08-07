@@ -21,13 +21,23 @@
     <div class="label">Doctor Invest Essencial</div>
     <h1>O vídeo antes da oferta.</h1>
     <p class="sub">Assista para entender como o Essencial coloca a sua vida financeira em ordem.</p>
+    <p class="sub-aviso">São 2 minutos e 45. O plano e o valor aparecem no fim do vídeo.</p>
 
     <div class="video-caixa">
       <!-- src lives directly on <video>, not a nested <source>: a <source>
            child fires its "error" on itself, not on the video element, and
            that event does not bubble, so vsl.js would never see a missing
-           file. One format only, so nothing is lost by skipping <source>. -->
-      <video id="video-vsl" controls playsinline preload="metadata" src="assets/vsl-essencial.mp4"></video>
+           file. One format only, so nothing is lost by skipping <source>.
+           autoplay only works muted (every browser blocks sound without a
+           gesture), so the picture starts on its own and the overlay below is
+           what turns the sound on -- and restarts from zero, because the hook
+           is in the first seconds and hearing it late is worse than waiting. -->
+      <video id="video-vsl" controls playsinline autoplay muted preload="auto" src="assets/vsl-essencial.mp4"></video>
+      <button type="button" class="video-som" id="video-som">
+        <span class="video-som-icone" aria-hidden="true">▶</span>
+        <span class="video-som-texto">Toque para ouvir</span>
+        <span class="video-som-nota">o vídeo recomeça do início</span>
+      </button>
       <p class="video-aviso" id="aviso-video" hidden>O vídeo está indisponível no momento. <a href="/plano">Leia o plano completo</a> enquanto isso.</p>
     </div>
 

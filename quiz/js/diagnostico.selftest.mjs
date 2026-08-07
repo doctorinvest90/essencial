@@ -646,6 +646,36 @@ function termoProibidoEncontrado(texto) {
   // runtime by the 'ended' fallback in vsl.js. Duplicating the measured length as a
   // constant would just be one more number to drift on the next re-render.
   assert.ok(delayConfigurado > 0, `offerDelaySeconds tem que ser positivo, está ${delayConfigurado}`);
+
+  // The video starts on its own, muted, and the overlay is what turns sound on.
+  // Three things have to stay true together or the page breaks in ways that look
+  // fine on screen: autoplay without muted is blocked by every browser (a video
+  // that never starts), the overlay has to exist for sound to be reachable at
+  // all, and turning sound on has to zero the accumulator, or the silent preview
+  // buys seconds towards a R$997 button the visitor never heard justified.
+  const fonteHtml = readFileSync(new URL("../../vsl.html", import.meta.url), "utf8");
+  const tagVideo = /<video\b[^>]*id="video-vsl"[^>]*>/.exec(fonteHtml);
+  assert.ok(tagVideo, "vsl.html não tem mais o elemento #video-vsl");
+  for (const attr of ["autoplay", "muted", "playsinline"]) {
+    assert.ok(
+      new RegExp(`\\b${attr}\\b`).test(tagVideo[0]),
+      `<video> perdeu "${attr}": sem os três juntos o autoplay é bloqueado e o vídeo nunca começa`
+    );
+  }
+  assert.ok(
+    /id="video-som"/.test(fonteHtml),
+    "a camada de som sumiu do vsl.html: o vídeo ficaria mudo sem caminho para ligar o áudio"
+  );
+  assert.ok(
+    /botaoSom\.addEventListener\("click"/.test(fonteVsl),
+    "ninguém escuta o clique da camada de som"
+  );
+  const ligar = /function ligarSom\(\)[\s\S]*?\n}/.exec(fonteVsl);
+  assert.ok(ligar, "vsl.js não tem mais ligarSom()");
+  assert.ok(
+    /acumulado\s*=\s*0/.test(ligar[0]) && /video\.currentTime\s*=\s*0/.test(ligar[0]),
+    "ligar o som tem que voltar o vídeo ao início E zerar o acumulado: senão a prévia muda compra segundos"
+  );
 }
 
 console.log("diagnostico.selftest ok");

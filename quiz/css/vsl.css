@@ -22,6 +22,58 @@
 .video-aviso { padding: 0 24px; font-size: 15px; text-align: center; opacity: .85; }
 .video-aviso a { color: var(--gold); }
 
+/* line above the player: says how long it is and that the price comes at the end,
+   so nobody sits through it wondering whether anything is going to happen */
+.sub-aviso {
+  margin: -8px 0 22px;
+  font-size: 15px;
+  color: var(--gold);
+  opacity: .9;
+}
+
+/* sound overlay: the video autoplays muted, this is what turns sound on. Covers
+   the whole frame so it is impossible to miss and hard to miss-tap. */
+.video-som {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  color: #fff;
+  background: linear-gradient(rgba(13, 27, 42, .25), rgba(13, 27, 42, .72));
+  transition: opacity .25s ease;
+}
+.video-som[hidden] { display: none; }
+.video-som-icone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  border: 2px solid var(--gold);
+  color: var(--gold);
+  font-size: 26px;
+  padding-left: 5px; /* optical centering of the triangle */
+  background: rgba(13, 27, 42, .55);
+}
+.video-som-texto { font-size: 19px; letter-spacing: .01em; }
+.video-som-nota { font-size: 14px; opacity: .7; }
+@media (max-width: 600px) {
+  .video-som-icone { width: 60px; height: 60px; font-size: 22px; }
+  .video-som-texto { font-size: 17px; }
+  /* the frame is only ~210px tall here, so this line lands on top of the burned-in
+     caption. "Toque para ouvir" is the part that has to be read. */
+  .video-som-nota { display: none; }
+}
+
 /* offer: hidden until vsl.js reveals it, then fades in */
 .oferta {
   margin-top: 44px;

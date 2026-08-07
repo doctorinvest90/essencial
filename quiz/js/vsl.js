@@ -11,6 +11,7 @@ const cfg = window.DI_CONFIG || {};
 
 const video = document.getElementById("video-vsl");
 const avisoVideo = document.getElementById("aviso-video");
+const botaoSom = document.getElementById("video-som");
 const oferta = document.getElementById("oferta");
 const ctaAnual = document.getElementById("cta-anual");
 const ctaTrimestral = document.getElementById("cta-trimestral");
@@ -64,6 +65,36 @@ video.addEventListener("timeupdate", () => {
 // and no beacon, and the funnel reads it as "the video loses people early".
 video.addEventListener("ended", revelarOferta);
 
+// --- Sound overlay --------------------------------------------------------
+// The video autoplays muted, because that is the only autoplay any browser
+// allows without a gesture. The overlay is that gesture: it turns the sound on
+// AND rewinds to zero, since the first fifteen seconds are the hook and
+// catching it half-played is worse than starting over.
+//
+// The accumulated time from the muted preview is thrown away on purpose. It
+// was watched, but not heard, and the offer is supposed to be born on the
+// sentence that names the product -- counting silent seconds towards it would
+// open the box before the visitor ever heard why.
+function ligarSom() {
+  if (botaoSom.hidden) return;
+  botaoSom.hidden = true;
+  video.muted = false;
+  video.currentTime = 0;
+  acumulado = 0;
+  ultimoTempo = null;
+  // Autoplay may have been blocked outright (low power mode, a stricter
+  // setting), in which case this click is also the play button.
+  video.play().catch(() => {});
+}
+botaoSom.addEventListener("click", ligarSom);
+
+// Unmuting through the native controls instead of the overlay leaves it stale
+// on screen. Hide it, but do not rewind or reset: the visitor chose to carry
+// on from where they were, and yanking them back to zero would be rude.
+video.addEventListener("volumechange", () => {
+  if (!video.muted && !botaoSom.hidden) botaoSom.hidden = true;
+});
+
 // Reset the baseline on pause and on seek so neither a resume nor a scrub
 // while paused computes a delta against a stale position.
 video.addEventListener("pause", () => { ultimoTempo = null; });
@@ -75,6 +106,7 @@ video.addEventListener("seeking", () => { ultimoTempo = video.currentTime; });
 // the offer stand on its own since there is nothing left to gate it on.
 video.addEventListener("error", () => {
   video.hidden = true;
+  botaoSom.hidden = true; // otherwise it sits on top of the message below
   avisoVideo.hidden = false;
   revelarOferta();
 });
