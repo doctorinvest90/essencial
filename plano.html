@@ -233,16 +233,17 @@ h1,h2,h3{font-family:'Cormorant Garamond',serif;font-weight:600;line-height:1.15
 
 <script type="module">
 // Same funnel beacon as the quiz and /vsl, same production-domain guard. This
-// page is a complete purchase path of its own (3 checkout links, reached from
-// the /vsl footer and from the video-missing fallback), so without it a sale
-// that came through here counts a view and no checkout_click, and the funnel
-// table reads that as "the offer is weak".
+// page is a complete purchase path of its own (4 checkout links: hero, the two
+// in the price card, and the closing CTA), reached from the /vsl footer and
+// from the video-missing fallback, so without it a sale that came through here
+// counts a view and no checkout_click, and the funnel table reads that as "the
+// offer is weak".
 import { enviarBeacon } from "/quiz/js/beacon.mjs";
 
 enviarBeacon("essencial-plano", "view");
 
-// Selected by href instead of by id: the 3 links carry no ids today, and a 4th
-// checkout link added later is instrumented by construction.
+// Selected by href instead of by id: the links carry no ids today, and one
+// added later is instrumented by construction.
 for (const link of document.querySelectorAll('a[href^="https://chk.eduzz.com/"]')) {
   link.addEventListener("click", () => enviarBeacon("essencial", "checkout_click"));
 }

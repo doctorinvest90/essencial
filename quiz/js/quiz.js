@@ -23,6 +23,7 @@ const telas = Array.from(document.querySelectorAll(".tela"));
 const contadas = telas.filter((tela) => tela.dataset.bloco);
 const respostas = {};
 let indice = 0;
+let avancoAgendado = null; // id of the pending auto-advance, so mostrar() can cancel it
 
 const progresso = document.getElementById("progresso");
 const progressoBloco = document.getElementById("progresso-bloco");
@@ -43,6 +44,15 @@ function indiceDe(id) {
 function mostrar(alvo) {
   const proxima = telas[alvo];
   if (!proxima) return;
+  // Any navigation cancels a pending auto-advance, so one gesture never turns
+  // two screens. Picking an option schedules an advance AVANCO_MS out; on a
+  // screen the visitor already answered the button is enabled, so changing the
+  // answer and tapping "Continuar" inside that window used to fire twice and
+  // skip a screen. Past q12 the skipped screen is the capture form and the
+  // visitor lands on "analisando", which has no way out: no diagnosis, no lead,
+  // no error. Clearing here (instead of inside avancar) covers Voltar too,
+  // which had the same double-navigation in a milder form.
+  window.clearTimeout(avancoAgendado);
   telas[indice].classList.remove("ativa");
   indice = alvo;
   proxima.classList.add("ativa");
@@ -90,7 +100,7 @@ document.addEventListener("change", (evento) => {
   const campo = evento.target;
   if (!(campo instanceof HTMLInputElement) || campo.type !== "radio") return;
   respostas[campo.name] = campo.value;
-  window.setTimeout(avancar, AVANCO_MS);
+  avancoAgendado = window.setTimeout(avancar, AVANCO_MS);
 });
 
 document.addEventListener("click", (evento) => {

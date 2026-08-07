@@ -375,6 +375,23 @@ function termoProibidoEncontrado(texto) {
     /function sincronizarAvanco\(/.test(fonteQuiz) && /sincronizarAvanco\(proxima\)/.test(fonteQuiz),
     "mostrar() não sincroniza mais o botão de avançar: pergunta respondida ficaria com o botão desabilitado para sempre"
   );
+
+  // The auto-advance timer has to stay cancellable, and something has to
+  // cancel it. Enabling the button opened a race: on an answered screen,
+  // changing the answer schedules an advance and tapping "Continuar" inside
+  // that window fires a second one, skipping a screen. After q12 the skipped
+  // screen is the capture form and the visitor is stranded on "analisando"
+  // forever, with no diagnosis and no lead. There is no DOM here, so the
+  // timing itself is covered by manual verification (see the report); what
+  // this asserts is that the two halves of the fix still exist together.
+  const agendamentos = fonteQuiz.match(/setTimeout\(avancar\b/g) ?? [];
+  assert.equal(agendamentos.length, 1, "há mais de um lugar agendando avancar: cada um precisaria do próprio cancelamento");
+  const agenda = /(\w+)\s*=\s*window\.setTimeout\(avancar\b/.exec(fonteQuiz);
+  assert.ok(agenda, "o auto-avanço não guarda mais o id do setTimeout, então ninguém consegue cancelá-lo");
+  assert.ok(
+    new RegExp(`window\\.clearTimeout\\(${agenda[1]}\\)`).test(fonteQuiz),
+    `ninguém cancela ${agenda[1]}: trocar a resposta e tocar em Continuar dentro da janela avança duas vezes e pula uma tela`
+  );
 }
 
 // The lead POST and the funnel beacon only fire on the live domain, so a page
