@@ -5,6 +5,7 @@
 // it; the script tag still sits at the end of body after config.js, so
 // timing is unchanged.
 import { enviarBeacon } from "./beacon.mjs";
+import { acumular, liberaOferta } from "./acumulador.mjs";
 
 const cfg = window.DI_CONFIG || {};
 
@@ -46,17 +47,13 @@ function revelarOferta() {
 // minutes" and "play, pause, wait, resume" behave correctly with no extra
 // bookkeeping: no ticks arrive while paused, so nothing accumulates.
 video.addEventListener("timeupdate", () => {
-  if (ultimoTempo !== null) {
-    const delta = video.currentTime - ultimoTempo;
-    // A real playback tick is a fraction of a second. Anything bigger is a
-    // seek (dragging the scrubber forward), never counted as watched time.
-    if (delta > 0 && delta < 2) acumulado += delta;
-  }
+  // The arithmetic itself lives in acumulador.mjs, where a Node self-check can
+  // reach it: which deltas count, which are scrubs, and what a missing
+  // threshold means are the rules that unlock a R$997 button, and they are not
+  // provable from inside this file (it needs a DOM to even load).
+  acumulado = acumular(acumulado, ultimoTempo, video.currentTime);
   ultimoTempo = video.currentTime;
-  // delaySeconds is undefined only if config.js failed to load or the field
-  // was removed; acumulado >= undefined is always false, so this fails
-  // closed on purpose instead of guessing a number.
-  if (acumulado >= delaySeconds) revelarOferta();
+  if (liberaOferta(acumulado, delaySeconds)) revelarOferta();
 });
 
 // Fallback that keeps a misconfigured delay from hiding the offer forever: a

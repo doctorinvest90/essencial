@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { diagnosticar, OPENS } from "./diagnostico.mjs";
 import { textoResultado } from "./resultado.mjs";
+import { acumular, liberaOferta, DELTA_MAXIMO_SEGUNDOS } from "./acumulador.mjs";
 
 // Every id here is the real option id emitted by index.html (the guard at the
 // bottom of this file proves it). Answers chosen so nothing opens.
@@ -518,6 +519,133 @@ function termoProibidoEncontrado(texto) {
     !/navigator\.sendBeacon/.test(fontePlano),
     "plano.html chama sendBeacon direto, fora da guarda de domínio de beacon.mjs"
   );
+}
+
+// The offer gate on /vsl: accumulated play time, and what it takes to cross it.
+//
+// This is the only logic on the funnel that turns a R$997 button visible, and until
+// Task 11 it was proven only by watching a browser. The arithmetic now lives in
+// acumulador.mjs precisely so it can be exercised here without a DOM.
+{
+  // Playback: browsers fire timeupdate roughly 4x/s, so deltas are fractions.
+  {
+    let acc = 0;
+    let ultimo = null;
+    for (const t of [0, 0.25, 0.5, 0.75, 1.0]) {
+      acc = acumular(acc, ultimo, t);
+      ultimo = t;
+    }
+    // The first tick has no baseline, so the offer clock starts at the second one.
+    assert.ok(Math.abs(acc - 1.0) < 1e-9, `1s de play tinha que contar 1s, contou ${acc}`);
+  }
+
+  // Paused: timeupdate does not fire at all, and even if it did with the playhead
+  // standing still, a zero delta adds nothing. Three minutes parked at 0:00 buys zero.
+  {
+    let acc = 0;
+    for (let i = 0; i < 720; i++) acc = acumular(acc, 12.5, 12.5);
+    assert.equal(acc, 0, "vídeo parado não pode acumular tempo assistido");
+  }
+
+  // Dragging the scrubber is a jump, never watched time. This is the attack: land on
+  // /vsl, drag to the end, buy the offer without watching. It has to fail.
+  {
+    let acc = 0;
+    let ultimo = 0;
+    for (const t of [40, 90, 140, 165]) {
+      acc = acumular(acc, ultimo, t);
+      ultimo = t;
+    }
+    assert.equal(acc, 0, "arrastar a barra não pode comprar segundos assistidos");
+    assert.equal(
+      liberaOferta(acc, 111.199),
+      false,
+      "scrub até o fim liberou a oferta sem o vídeo ter sido assistido"
+    );
+  }
+
+  // Boundary: exactly DELTA_MAXIMO_SEGUNDOS is already a seek, not a tick.
+  assert.equal(acumular(0, 0, DELTA_MAXIMO_SEGUNDOS), 0, "delta igual ao teto tem que ser descartado");
+  assert.ok(acumular(0, 0, DELTA_MAXIMO_SEGUNDOS - 0.001) > 0, "delta abaixo do teto tem que contar");
+
+  // Seeking backwards produces a negative delta, which must never subtract either.
+  assert.equal(acumular(30, 50, 10), 30, "voltar a barra não pode mexer no acumulado");
+
+  // Right after a pause there is no trustworthy baseline, so that tick is dropped. The
+  // accumulator therefore loses a fraction on every resume and always runs BEHIND real
+  // watch time: the offer can only be born later than deserved, never earlier. For a
+  // purchase gate, late is the only safe direction.
+  assert.equal(acumular(9, null, 40), 9, "sem baseline (pós-pausa) nada pode ser somado");
+  // Deliberately with the playhead still near the start: `null` coerces to 0, so a
+  // resume late in the video is discarded anyway by the scrub ceiling and would let a
+  // missing null-guard pass unnoticed. Under 2s it is not, and this is the assertion
+  // that actually holds the guard in place.
+  assert.equal(
+    acumular(0, null, 1.5),
+    0,
+    "retomada a 1,5s somou tempo que ninguém assistiu: a guarda de baseline nulo sumiu"
+  );
+
+  // The full browser scenario from the Task 6 verification, as arithmetic: play, pause,
+  // wait parked, resume, play. Only the two playing stretches count.
+  {
+    let acc = 0;
+    let ultimo = null;
+    for (const t of [10, 10.3, 10.6, 10.9]) { acc = acumular(acc, ultimo, t); ultimo = t; }
+    ultimo = null;                                   // pause resets the baseline
+    for (let i = 0; i < 10; i++) acc = acumular(acc, ultimo, 10.9);
+    for (const t of [10.9, 11.2, 11.5]) { acc = acumular(acc, ultimo, t); ultimo = t; }
+    assert.ok(Math.abs(acc - 1.5) < 1e-9, `esperava 1,5s de play acumulado, deu ${acc}`);
+  }
+
+  // Fails closed. A config that failed to load, lost the field or carries it as text
+  // hides the offer; it never guesses a number and never shows a price early.
+  for (const ruim of [undefined, null, NaN, Infinity, "111.199", {}]) {
+    assert.equal(
+      liberaOferta(999999, ruim),
+      false,
+      `limiar inválido (${String(ruim)}) tem que esconder a oferta, não liberá-la`
+    );
+  }
+  assert.equal(liberaOferta(111.199, 111.199), true, "no limiar exato a oferta nasce");
+  assert.equal(liberaOferta(111.198, 111.199), false, "um milissegundo antes ela ainda não nasce");
+
+  // Anti-drift, same shape as the beacon guard above: vsl.js has to pull the arithmetic
+  // from this module. A second copy inlined there would keep every assertion above green
+  // while production drifted.
+  const fonteVsl = readFileSync(new URL("./vsl.js", import.meta.url), "utf8");
+  assert.ok(
+    /from\s+["']\.\/acumulador\.mjs["']/.test(fonteVsl),
+    "vsl.js não importa mais de acumulador.mjs: a aritmética da oferta voltou a ficar sem teste"
+  );
+  for (const [nome, chamada] of [["acumular", /\bacumular\(/], ["liberaOferta", /\bliberaOferta\(/]]) {
+    assert.ok(chamada.test(fonteVsl), `vsl.js importa ${nome} mas não chama`);
+  }
+  assert.ok(
+    !/acumulado\s*\+=/.test(fonteVsl),
+    "vsl.js voltou a somar o acumulado por conta própria, fora da função testada"
+  );
+  assert.ok(
+    !/acumulado\s*>=/.test(fonteVsl),
+    "vsl.js voltou a comparar o acumulado com o limiar por conta própria, fora da função testada"
+  );
+
+  // offerDelaySeconds is the one number Task 11 measures and writes by hand. As text, or
+  // absent, liberaOferta hides the offer forever with no error anywhere: the fail-closed
+  // behaviour proved above is exactly what would swallow the mistake.
+  const fonteConfig = readFileSync(new URL("./config.js", import.meta.url), "utf8");
+  const achadoDelay = /offerDelaySeconds:\s*([^,\n]+)/.exec(fonteConfig);
+  assert.ok(achadoDelay, "config.js não declara mais offerDelaySeconds");
+  const delayConfigurado = Number(achadoDelay[1].trim());
+  assert.ok(
+    Number.isFinite(delayConfigurado) && !/["']/.test(achadoDelay[1]),
+    `offerDelaySeconds tem que ser número, config.js traz ${achadoDelay[1].trim()}`
+  );
+  // No upper bound is asserted here on purpose: the video's duration is not readable from
+  // Node without a dependency, and a delay longer than the cut is already caught at
+  // runtime by the 'ended' fallback in vsl.js. Duplicating the measured length as a
+  // constant would just be one more number to drift on the next re-render.
+  assert.ok(delayConfigurado > 0, `offerDelaySeconds tem que ser positivo, está ${delayConfigurado}`);
 }
 
 console.log("diagnostico.selftest ok");

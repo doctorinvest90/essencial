@@ -10,5 +10,8 @@ window.DI_CONFIG = {
   checkoutTrimestral: "https://chk.eduzz.com/D0R8VBG29Y", // assinatura 3 meses · R$ 297,00
   leadUrl: "https://webhook.drheliobarros.com.br/api/quiz/lead",
   beaconUrl: "https://webhook.drheliobarros.com.br/api/funnel/events",
-  offerDelaySeconds: 128, // measured on the final cut (Task 11)
+  offerDelaySeconds: 111.199, // measured on the final cut: start of the SRT cue that
+  // names the product ("Ele se chama Doctor Invest Essencial"). The 128 that stood
+  // here was a writing-time estimate at 150 words/min; the cloned voice reads at 174,
+  // so the name lands 17s earlier. Re-cut the narration and this number moves with it.
 };
