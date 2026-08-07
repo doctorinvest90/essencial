@@ -1,0 +1,10 @@
+# GitHub Pages (legacy Jekyll build) config for essencial.drheliobarros.com.br.
+#
+# The only thing this does is keep working files out of the published site. Without
+# it Jekyll copies everything, and two internal files would answer 200 on a public
+# marketing domain: the copy source (which carries spec references, the OPENS contract
+# and two rejected wordings in HTML comments) and the node self-check (651 lines of
+# test code, including the regulatory blocklist). Neither is loaded by any page.
+exclude:
+  - quiz/copy.md
+  - quiz/js/diagnostico.selftest.mjs
