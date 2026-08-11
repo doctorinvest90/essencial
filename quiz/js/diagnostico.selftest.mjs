@@ -506,6 +506,24 @@ function termoProibidoEncontrado(texto) {
     'enviarPixel("Lead") saiu de dentro do handler de captura do quiz'
   );
 
+  // Every checkout link on /plano has to be one of the two in config.js. The page
+  // hardcodes four anchors (hero, the two in the price card, closing CTA) while the
+  // quiz and /vsl read config, and on 11/08 that split cost a real incident: the Eduzz
+  // products were rebuilt to carry the member-area lessons, config.js was updated, and
+  // four anchors on /plano kept selling the old SKUs with no course attached, while
+  // paid traffic was already running. Static hrefs are kept on purpose (a page whose
+  // buy button depends on JS is worse), so the invariant is enforced here instead.
+  const fontePlano = readFileSync(new URL("../../plano.html", import.meta.url), "utf8");
+  const fonteConfigCheckout = readFileSync(new URL("./config.js", import.meta.url), "utf8");
+  const doConfig = [...fonteConfigCheckout.matchAll(/checkout\w+:\s*"https:\/\/chk\.eduzz\.com\/(\w+)"/g)].map((m) => m[1]);
+  assert.equal(doConfig.length, 2, `config.js tem ${doConfig.length} checkouts, esperado 2 (anual e trimestral)`);
+  for (const [, id] of fontePlano.matchAll(/https:\/\/chk\.eduzz\.com\/(\w+)/g)) {
+    assert.ok(
+      doConfig.includes(id),
+      `plano.html aponta para o checkout ${id}, que não está em config.js: a página vende um SKU que o quiz e a VSL não vendem`
+    );
+  }
+
   // One id, in config.js, next to the checkout links. A copy hardcoded in a
   // page is how two pixels end up half-populated and neither can optimise.
   const fonteConfigPixel = readFileSync(new URL("./config.js", import.meta.url), "utf8");
