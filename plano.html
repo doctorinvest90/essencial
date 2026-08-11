@@ -238,8 +238,9 @@ h1,h2,h3{font-family:'Cormorant Garamond',serif;font-weight:600;line-height:1.15
 // from the video-missing fallback, so without it a sale that came through here
 // counts a view and no checkout_click, and the funnel table reads that as "the
 // offer is weak".
-import { enviarBeacon } from "/quiz/js/beacon.mjs";
+import { enviarBeacon, iniciarPixel } from "/quiz/js/beacon.mjs";
 
+iniciarPixel();
 enviarBeacon("essencial-plano", "view");
 
 // Selected by href instead of by id: the links carry no ids today, and one

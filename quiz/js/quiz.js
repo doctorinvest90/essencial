@@ -10,7 +10,7 @@ import { textoResultado } from "./resultado.mjs";
 // DOMINIO_DE_PRODUCAO guards both the lead POST below and the funnel beacon
 // in beacon.mjs: one regex, imported by both, instead of two copies that can
 // drift out of sync.
-import { DOMINIO_DE_PRODUCAO, enviarBeacon } from "./beacon.mjs";
+import { DOMINIO_DE_PRODUCAO, enviarBeacon, enviarPixel, iniciarPixel } from "./beacon.mjs";
 
 const ESPERA_MS = 2500; // "analisando" screen, per copy.md
 const AVANCO_MS = 220; // pause after a tap, so the selection is visible before the screen turns
@@ -139,6 +139,10 @@ form.addEventListener("submit", (evento) => {
   guardarDiag(diag);
   enviarLead(diag); // fire and forget: the network never holds the result back
   enviarBeacon("essencial-quiz-done", "view");
+  // The conversion an ad campaign optimises for. Fires with the beacon, from
+  // the same handler, so the two counts stay comparable: a gap between them is
+  // ad blockers, not a broken step.
+  enviarPixel("Lead");
   renderResultado(diag);
   mostrar(indiceDe("tela-analisando"));
   window.setTimeout(() => mostrar(indiceDe("tela-resultado")), ESPERA_MS);
@@ -225,5 +229,6 @@ function renderResultado(diag) {
   cta.href = texto.cta.href;
 }
 
+iniciarPixel();
 enviarBeacon("essencial-quiz", "view");
 mostrar(0);

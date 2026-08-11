@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { diagnosticar, OPENS } from "./diagnostico.mjs";
 import { textoResultado } from "./resultado.mjs";
 import { acumular, liberaOferta, DELTA_MAXIMO_SEGUNDOS } from "./acumulador.mjs";
+import { enviarPixel, iniciarPixel } from "./beacon.mjs";
 
 // Every id here is the real option id emitted by index.html (the guard at the
 // bottom of this file proves it). Answers chosen so nothing opens.
@@ -438,6 +439,94 @@ function termoProibidoEncontrado(texto) {
     fonteQuiz.includes("DOMINIO_DE_PRODUCAO.test("),
     "quiz.js não aplica mais a guarda no envio do lead"
   );
+}
+
+// The Meta Pixel obeys the same production-domain rule as the beacon, and the
+// "Lead" event is what an ad campaign optimises against. Two ways this breaks
+// silently and neither shows on screen: the pixel firing from a local test or
+// a fork (poisoning the very audience the campaign will target), and the Lead
+// event getting dropped in a refactor while the beacon survives — which reads
+// downstream as "the traffic does not convert" when in fact nobody counted.
+{
+  const janelaOriginal = Object.getOwnPropertyDescriptor(globalThis, "window");
+  const comJanela = (janela, corpo) => {
+    globalThis.window = janela;
+    try {
+      corpo();
+    } finally {
+      if (janelaOriginal) Object.defineProperty(globalThis, "window", janelaOriginal);
+      else delete globalThis.window;
+    }
+  };
+  const chamadas = [];
+  const fbqFalso = (...args) => chamadas.push(args);
+
+  // Off production: nothing loads, nothing fires, and nothing throws.
+  comJanela({ location: { hostname: "localhost" }, DI_CONFIG: { pixelId: "123" } }, () => {
+    iniciarPixel();
+    assert.equal(window.fbq, undefined, "iniciarPixel carregou o pixel fora de produção");
+  });
+  chamadas.length = 0;
+  comJanela({ location: { hostname: "localhost" }, fbq: fbqFalso }, () => enviarPixel("Lead"));
+  assert.deepEqual(chamadas, [], 'enviarPixel disparou "Lead" fora de produção');
+
+  // In production, with fbq already installed: no second init, no double
+  // PageView. This is also the only iniciarPixel path Node can run — the real
+  // loader touches document, which is exactly why it is guarded behind this.
+  chamadas.length = 0;
+  comJanela(
+    { location: { hostname: "essencial.drheliobarros.com.br" }, DI_CONFIG: { pixelId: "123" }, fbq: fbqFalso },
+    () => iniciarPixel()
+  );
+  assert.deepEqual(chamadas, [], "iniciarPixel repetiu init/PageView numa página que já tinha fbq");
+
+  // In production, the event that the campaign optimises for.
+  chamadas.length = 0;
+  comJanela({ location: { hostname: "essencial.drheliobarros.com.br" }, fbq: fbqFalso }, () =>
+    enviarPixel("Lead")
+  );
+  assert.deepEqual(chamadas, [["track", "Lead"]], 'enviarPixel não disparou track/"Lead" em produção');
+
+  // Ad blocker, or iniciarPixel never ran: a reporting loss, never an exception
+  // thrown from inside the submit handler that is showing the diagnosis.
+  comJanela({ location: { hostname: "essencial.drheliobarros.com.br" } }, () =>
+    assert.doesNotThrow(() => enviarPixel("Lead"), "enviarPixel explodiu sem fbq em vez de avisar")
+  );
+
+  // The Lead fires from the same handler as the quiz-done beacon, between it
+  // and the diagnosis. Together they are comparable: a gap between the two
+  // counts is ad blockers, not a missing funnel step.
+  const fonteQuizPixel = readFileSync(new URL("./quiz.js", import.meta.url), "utf8");
+  const posBeacon = fonteQuizPixel.indexOf('enviarBeacon("essencial-quiz-done", "view")');
+  const posLead = fonteQuizPixel.indexOf('enviarPixel("Lead")');
+  const posResultado = fonteQuizPixel.indexOf("renderResultado(diag)");
+  assert.ok(posLead > 0, 'quiz.js não dispara mais enviarPixel("Lead") na captura');
+  assert.ok(
+    posBeacon < posLead && posLead < posResultado,
+    'enviarPixel("Lead") saiu de dentro do handler de captura do quiz'
+  );
+
+  // One id, in config.js, next to the checkout links. A copy hardcoded in a
+  // page is how two pixels end up half-populated and neither can optimise.
+  const fonteConfigPixel = readFileSync(new URL("./config.js", import.meta.url), "utf8");
+  const achadoId = /pixelId:\s*"(\d{15,16})"/.exec(fonteConfigPixel);
+  assert.ok(achadoId, "config.js não declara mais pixelId com um id numérico");
+  for (const [nome, url] of [
+    ["quiz.js", "./quiz.js"],
+    ["vsl.js", "./vsl.js"],
+    ["beacon.mjs", "./beacon.mjs"],
+    ["plano.html", "../../plano.html"],
+  ]) {
+    const fonte = readFileSync(new URL(url, import.meta.url), "utf8");
+    assert.ok(
+      !fonte.includes(achadoId[1]),
+      `${nome} tem o id do pixel escrito na mão em vez de ler de config.js`
+    );
+    assert.ok(
+      nome === "beacon.mjs" || /iniciarPixel\(\)/.test(fonte),
+      `${nome} não chama iniciarPixel(): a página fica invisível para o pixel`
+    );
+  }
 }
 
 // The funnel steps (task-7-brief.md) are literal (page, event) pairs passed to

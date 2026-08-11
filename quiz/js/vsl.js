@@ -4,7 +4,7 @@
 // so it can import the shared beacon from beacon.mjs instead of duplicating
 // it; the script tag still sits at the end of body after config.js, so
 // timing is unchanged.
-import { enviarBeacon } from "./beacon.mjs";
+import { enviarBeacon, iniciarPixel } from "./beacon.mjs";
 import { acumular, liberaOferta } from "./acumulador.mjs";
 
 const cfg = window.DI_CONFIG || {};
@@ -16,6 +16,10 @@ const oferta = document.getElementById("oferta");
 const ctaAnual = document.getElementById("cta-anual");
 const ctaTrimestral = document.getElementById("cta-trimestral");
 
+// PageView here as well as on the quiz: an ad can point straight at /vsl
+// (§D7 of the design), and this page is also where the checkout lives, so
+// without it those visitors are invisible to any future retargeting.
+iniciarPixel();
 enviarBeacon("essencial-vsl", "view");
 
 // --- Offer reveal: accumulated play time, never wall time -----------------

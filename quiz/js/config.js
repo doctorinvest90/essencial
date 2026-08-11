@@ -10,6 +10,11 @@ window.DI_CONFIG = {
   checkoutTrimestral: "https://chk.eduzz.com/D0R8VBG29Y", // assinatura 3 meses · R$ 297,00
   leadUrl: "https://webhook.drheliobarros.com.br/api/quiz/lead",
   beaconUrl: "https://webhook.drheliobarros.com.br/api/funnel/events",
+  // "Pixel de Doctor de Invest" — the same pixel the consultoria landing page
+  // fires and the same id the quiz-intake CAPI already reports to
+  // (QUIZ_CAPI_PIXEL_ID). One pixel for the whole house is what lets a single
+  // ad account optimise, and later dedup pixel against server events.
+  pixelId: "1893562330686295",
   offerDelaySeconds: 111.199, // measured on the final cut: start of the SRT cue that
   // names the product ("Ele se chama Doctor Invest Essencial"). The 128 that stood
   // here was a writing-time estimate at 150 words/min; the cloned voice reads at 174,
