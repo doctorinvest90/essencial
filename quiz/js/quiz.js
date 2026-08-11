@@ -189,6 +189,10 @@ function enviarLead(diag) {
     respostas,
     utm_source: params.get("utm_source"),
     utm_campaign: params.get("utm_campaign"),
+    // The ad stamps utm_content={{ad.name}} and utm_term={{adset.name}}. Sending
+    // them is what lets the paid loop decide per creative instead of per campaign.
+    utm_content: params.get("utm_content"),
+    utm_term: params.get("utm_term"),
   };
   try {
     window
