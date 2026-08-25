@@ -137,16 +137,36 @@ form.addEventListener("submit", (evento) => {
   erro.textContent = "";
   const diag = diagnosticar(respostas);
   guardarDiag(diag);
-  enviarLead(diag); // fire and forget: the network never holds the result back
+  // One id, two paths. The browser pixel below and the server-side Conversions
+  // API (fired by POST /api/quiz/lead) both report this same lead, and Meta
+  // collapses them into one conversion by this id. Generated here, at the only
+  // moment both paths share, and never reused.
+  const eventId = novoEventId();
+  enviarLead(diag, eventId); // fire and forget: the network never holds the result back
   enviarBeacon("essencial-quiz-done", "view");
   // The conversion an ad campaign optimises for. Fires with the beacon, from
   // the same handler, so the two counts stay comparable: a gap between them is
-  // ad blockers, not a broken step.
-  enviarPixel("Lead");
+  // ad blockers, not a broken step — and now the server covers that gap.
+  enviarPixel("Lead", eventId);
   renderResultado(diag);
   mostrar(indiceDe("tela-analisando"));
   window.setTimeout(() => mostrar(indiceDe("tela-resultado")), ESPERA_MS);
 });
+
+// crypto.randomUUID needs a secure context; production is https and so is
+// localhost, but a plain-http preview would throw inside the submit handler and
+// take the diagnosis down with it. The fallback only has to be unique, not
+// cryptographic: it is a dedup key, not a secret.
+function novoEventId() {
+  try {
+    if (window.crypto && typeof window.crypto.randomUUID === "function") {
+      return window.crypto.randomUUID();
+    }
+  } catch (falha) {
+    console.warn("quiz: randomUUID indisponível, usando id de reserva", falha);
+  }
+  return `q-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
 
 // Read by /vsl to keep the degrau across the jump and push it down to the
 // checkout as utm_content.
@@ -170,7 +190,7 @@ function guardarDiag(diag) {
 // Field names are the QuizLeadIn model (dashboard backend). A wrong name is
 // dropped silently by Pydantic, so this object is copied from the model, not
 // invented here.
-function enviarLead(diag) {
+function enviarLead(diag, eventId) {
   if (!cfg.leadUrl) return;
   if (!ehProducao()) {
     console.info(
@@ -193,6 +213,11 @@ function enviarLead(diag) {
     // them is what lets the paid loop decide per creative instead of per campaign.
     utm_content: params.get("utm_content"),
     utm_term: params.get("utm_term"),
+    event_id: eventId,
+    // The server's ONLY matching key. It turns this into `fbc` and sends nothing
+    // else about the person — no e-mail, no phone (CLAUDE.md 4.4). A lead with no
+    // fbclid did not come from an ad, and the server reports nothing at all.
+    fbclid: params.get("fbclid"),
   };
   try {
     window

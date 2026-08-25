@@ -497,9 +497,22 @@ function termoProibidoEncontrado(texto) {
   chamadas.length = 0;
   comJanela(
     { location: { hostname: "essencial.drheliobarros.com.br" }, DI_CONFIG: { producao: true }, fbq: fbqFalso },
+    () => enviarPixel("Lead", "evt-1")
+  );
+  assert.deepEqual(
+    chamadas,
+    [["track", "Lead", {}, { eventID: "evt-1" }]],
+    'enviarPixel não disparou track/"Lead" com o eventID de dedup em produção'
+  );
+
+  // Sem id, a chamada mantém a forma antiga: um evento sem gêmeo no servidor não
+  // precisa de chave de dedup, e passar eventID undefined confundiria a Meta.
+  chamadas.length = 0;
+  comJanela(
+    { location: { hostname: "essencial.drheliobarros.com.br" }, DI_CONFIG: { producao: true }, fbq: fbqFalso },
     () => enviarPixel("Lead")
   );
-  assert.deepEqual(chamadas, [["track", "Lead"]], 'enviarPixel não disparou track/"Lead" em produção');
+  assert.deepEqual(chamadas, [["track", "Lead"]], "enviarPixel sem eventId mudou de forma");
 
   // Ad blocker, or iniciarPixel never ran: a reporting loss, never an exception
   // thrown from inside the submit handler that is showing the diagnosis.
@@ -513,12 +526,38 @@ function termoProibidoEncontrado(texto) {
   // counts is ad blockers, not a missing funnel step.
   const fonteQuizPixel = readFileSync(new URL("./quiz.js", import.meta.url), "utf8");
   const posBeacon = fonteQuizPixel.indexOf('enviarBeacon("essencial-quiz-done", "view")');
-  const posLead = fonteQuizPixel.indexOf('enviarPixel("Lead")');
+  const posLead = fonteQuizPixel.indexOf('enviarPixel("Lead", eventId)');
   const posResultado = fonteQuizPixel.indexOf("renderResultado(diag)");
-  assert.ok(posLead > 0, 'quiz.js não dispara mais enviarPixel("Lead") na captura');
+  assert.ok(posLead > 0, 'quiz.js não dispara mais enviarPixel("Lead", eventId) na captura');
   assert.ok(
     posBeacon < posLead && posLead < posResultado,
     'enviarPixel("Lead") saiu de dentro do handler de captura do quiz'
+  );
+
+  // Dedup pixel <-> Conversions API. Os dois caminhos reportam o MESMO lead, e a
+  // Meta só os colapsa num se carregarem o mesmo event_id. Se um lado perder o
+  // id, cada lead vira duas conversões e o custo por lead da conta cai pela
+  // metade no papel — justamente o número que a campanha usa para otimizar.
+  // O servidor recusa reportar lead sem id (main.py build_quiz_capi_event), então
+  // o modo de falha real é o navegador parar de gerar ou de repassar.
+  assert.ok(
+    /const eventId = novoEventId\(\)/.test(fonteQuizPixel),
+    "quiz.js não gera mais o eventId compartilhado na captura"
+  );
+  assert.ok(
+    // O ponto-e-vírgula é o que separa a CHAMADA da declaração da função
+    // (`function enviarLead(diag, eventId) {`). Sem ele este guarda passava com
+    // o call site já sem o id — encontrado por mutação, não por leitura.
+    /enviarLead\(diag, eventId\);/.test(fonteQuizPixel),
+    "quiz.js não passa mais o eventId para o POST do lead: o servidor não consegue deduplicar"
+  );
+  assert.ok(
+    /enviarPixel\("Lead", eventId\)/.test(fonteQuizPixel),
+    "quiz.js não passa mais o eventId para o pixel: a Meta conta o lead duas vezes"
+  );
+  assert.ok(
+    /event_id: eventId/.test(fonteQuizPixel) && /fbclid: params\.get\("fbclid"\)/.test(fonteQuizPixel),
+    "o corpo do lead perdeu event_id ou fbclid: o CAPI fica sem chave de dedup ou sem casamento"
   );
 
   // Every checkout link on /plano has to be one of the two in config.js. The page

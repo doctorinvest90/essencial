@@ -91,8 +91,13 @@ export function enviarBeacon(page, event) {
  * Fires a standard Meta event. Same production rule as the beacon.
  *
  * @param {string} evento standard event name, e.g. "Lead"
+ * @param {string} [eventId] the SAME id sent to the server as `event_id`. Meta
+ *   dedups this browser event against the Conversions API event by it. Without
+ *   it the two paths count the same lead twice and every cost-per-lead in the
+ *   account halves on paper — the number the campaign optimises against. The
+ *   server refuses to report a lead that has no id, for the same reason.
  */
-export function enviarPixel(evento) {
+export function enviarPixel(evento, eventId) {
   if (!ehProducao()) {
     console.info(`pixel: "${evento}" não enviado fora de drheliobarros.com.br. É de propósito.`);
     return;
@@ -104,5 +109,8 @@ export function enviarPixel(evento) {
     console.warn(`pixel: "${evento}" não enviado, fbq não carregou`);
     return;
   }
-  window.fbq("track", evento);
+  // The 4th argument is the dedup key. Passing it only when we have one keeps
+  // the call shape identical to before for any event that has no server twin.
+  if (eventId) window.fbq("track", evento, {}, { eventID: eventId });
+  else window.fbq("track", evento);
 }
