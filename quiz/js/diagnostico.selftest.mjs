@@ -3,13 +3,13 @@ import { readFileSync } from "node:fs";
 import { diagnosticar, OPENS } from "./diagnostico.mjs";
 import { textoResultado } from "./resultado.mjs";
 import { acumular, liberaOferta, DELTA_MAXIMO_SEGUNDOS } from "./acumulador.mjs";
-import { enviarPixel, iniciarPixel } from "./beacon.mjs";
+import { ehProducao, enviarPixel } from "./beacon.mjs";
 
 // Every id here is the real option id emitted by index.html (the guard at the
 // bottom of this file proves it). Answers chosen so nothing opens.
 const ok = { q1: "sei_numero", q2: "mais6", q3: "nenhuma", q4: "seguro_sei_quanto", q5: "nao_tenho_pj",
              q6: "carteira_com_alguem", q7: "todo_mes", q8: "ultimos_3_meses", q9: "tenho_processo",
-             q10: "D", q11: "100a300", q12: "tres_meses" };
+             q10: "D", q11: "100a300" };
 
 // tudo em ordem: nenhum degrau aberto
 {
@@ -259,13 +259,18 @@ function termoProibidoEncontrado(texto) {
     (opcoesPorPergunta[pergunta] ??= []).push(achado[1]);
   }
 
-  // The quiz is 12 questions. One more or one less here means either a
+  // The quiz is 11 questions. One more or one less here means either a
   // question the engine never reads, or an engine question gone from screen.
-  const esperadas = Array.from({ length: 12 }, (_, i) => `q${i + 1}`);
+  // It was 12 until 25/08/2026: q12 asked how soon the visitor wanted the
+  // order standing and fed nothing at all — not the diagnosis, not beehiiv,
+  // only the respostas blob — so it was a screen charged to every visitor for
+  // no reading in return. Adding a question here again means wiring it into
+  // OPENS (or into diagnosticar) in the same change, or it is dead weight.
+  const esperadas = Array.from({ length: 11 }, (_, i) => `q${i + 1}`);
   assert.deepEqual(
     new Set(Object.keys(opcoesPorPergunta)),
     new Set(esperadas),
-    "index.html tem que emitir exatamente q1..q12"
+    "index.html tem que emitir exatamente q1..q11"
   );
 
   for (const [pergunta, ids] of Object.entries(opcoesPorPergunta)) {
@@ -300,15 +305,13 @@ function termoProibidoEncontrado(texto) {
     }
   }
 
-  // q10 (energia), q11 (faixa) and q12 (urgência) never go through OPENS: the
-  // first two land raw in the diagnosis, the third only in the lead record.
-  // They need a consistency check of their own.
+  // q10 (energia) and q11 (faixa) never go through OPENS: they land raw in the
+  // diagnosis. They need a consistency check of their own.
   assert.deepEqual(new Set(opcoesPorPergunta.q10), new Set(["A", "B", "C", "D"]));
   assert.deepEqual(
     new Set(opcoesPorPergunta.q11),
     new Set(["ate100", "100a300", "300a500", "acima500"])
   );
-  assert.equal(opcoesPorPergunta.q12.length, 4, "q12 tem que ter as 4 opções de urgência");
 
   for (const energia of opcoesPorPergunta.q10) {
     assert.equal(
@@ -346,8 +349,8 @@ function termoProibidoEncontrado(texto) {
   const comPergunta = telas.filter((corpo) => /\bname="q\d+"/.test(corpo));
   assert.equal(
     comPergunta.length,
-    12,
-    `esperava 12 telas de pergunta no index.html, achou ${comPergunta.length}`
+    11,
+    `esperava 11 telas de pergunta no index.html, achou ${comPergunta.length}`
   );
   for (const corpo of comPergunta) {
     const pergunta = /\bname="(q\d+)"/.exec(corpo)[1];
@@ -399,17 +402,30 @@ function termoProibidoEncontrado(texto) {
 // The lead POST and the funnel beacon only fire on the live domain, so a page
 // opened on localhost, in a fork or from a copied file never writes a real
 // person into the production funnel (Task 13b subscribes these leads to a
-// real list) nor counts a fake step. The guard now lives once in beacon.mjs
-// and is imported by quiz.js (lead POST + its own beacon calls) and vsl.js
-// (its beacon calls); a second copy in either file would keep this test
-// passing while production quietly drifted between the two rules.
+// real list) nor counts a fake step. The guard lives once in config.js — it
+// moved there on 25/08/2026 because config.js is the classic <head> script
+// every page loads, so it is the only file that runs early enough to fire the
+// Pixel on the first round trip, and once it had to know the rule a second
+// regex in beacon.mjs would have been the copy that drifts. beacon.mjs exports
+// ehProducao() over the boolean config.js computes; quiz.js and vsl.js read
+// that. A copy in any of the three would keep this test passing while
+// production quietly drifted between the two rules.
 {
-  const fonteBeacon = readFileSync(new URL("./beacon.mjs", import.meta.url), "utf8");
-  const achado = /const DOMINIO_DE_PRODUCAO = \/(.*)\/;/.exec(fonteBeacon);
-  assert.ok(achado, "beacon.mjs não declara mais DOMINIO_DE_PRODUCAO numa linha só");
+  const fonteConfigDominio = readFileSync(new URL("./config.js", import.meta.url), "utf8");
+  const achado = /const DOMINIO_DE_PRODUCAO = \/(.*)\/;/.exec(fonteConfigDominio);
+  assert.ok(achado, "config.js não declara mais DOMINIO_DE_PRODUCAO numa linha só");
   assert.ok(
-    fonteBeacon.includes("DOMINIO_DE_PRODUCAO.test("),
-    "DOMINIO_DE_PRODUCAO existe em beacon.mjs mas ninguém aplica a guarda lá dentro"
+    /DI_CONFIG\.producao\s*=\s*DOMINIO_DE_PRODUCAO\.test\(/.test(fonteConfigDominio),
+    "config.js declara DOMINIO_DE_PRODUCAO mas não computa DI_CONFIG.producao com ela"
+  );
+  const fonteBeacon = readFileSync(new URL("./beacon.mjs", import.meta.url), "utf8");
+  assert.ok(
+    fonteBeacon.includes("DI_CONFIG || {}).producao === true"),
+    "beacon.mjs não lê mais DI_CONFIG.producao: a guarda perdeu a fonte"
+  );
+  assert.ok(
+    !/const DOMINIO_DE_PRODUCAO\s*=/.test(fonteBeacon),
+    "beacon.mjs voltou a declarar uma cópia própria de DOMINIO_DE_PRODUCAO"
   );
   const dominio = new RegExp(achado[1]);
 
@@ -428,7 +444,7 @@ function termoProibidoEncontrado(texto) {
   for (const [nome, fonte] of [["quiz.js", fonteQuiz], ["vsl.js", fonteVsl]]) {
     assert.ok(
       !/const DOMINIO_DE_PRODUCAO\s*=/.test(fonte),
-      `${nome} declara uma cópia própria de DOMINIO_DE_PRODUCAO em vez de importar de beacon.mjs`
+      `${nome} declara uma cópia própria de DOMINIO_DE_PRODUCAO em vez de ler de config.js`
     );
     assert.ok(
       /from\s+["']\.\/beacon\.mjs["']/.test(fonte),
@@ -436,7 +452,7 @@ function termoProibidoEncontrado(texto) {
     );
   }
   assert.ok(
-    fonteQuiz.includes("DOMINIO_DE_PRODUCAO.test("),
+    fonteQuiz.includes("ehProducao()"),
     "quiz.js não aplica mais a guarda no envio do lead"
   );
 }
@@ -461,36 +477,35 @@ function termoProibidoEncontrado(texto) {
   const chamadas = [];
   const fbqFalso = (...args) => chamadas.push(args);
 
-  // Off production: nothing loads, nothing fires, and nothing throws.
-  comJanela({ location: { hostname: "localhost" }, DI_CONFIG: { pixelId: "123" } }, () => {
-    iniciarPixel();
-    assert.equal(window.fbq, undefined, "iniciarPixel carregou o pixel fora de produção");
-  });
+  // Off production nothing fires. ehProducao reads the boolean config.js
+  // computes, so "sem DI_CONFIG" is the same as "fora de produção": a page
+  // that forgot config.js measures nothing instead of polluting the pixel.
+  comJanela({ location: { hostname: "localhost" } }, () =>
+    assert.equal(ehProducao(), false, "ehProducao deu true sem DI_CONFIG")
+  );
+  comJanela({ location: { hostname: "localhost" }, DI_CONFIG: { producao: false } }, () =>
+    assert.equal(ehProducao(), false, "ehProducao ignorou producao: false")
+  );
   chamadas.length = 0;
   comJanela({ location: { hostname: "localhost" }, fbq: fbqFalso }, () => enviarPixel("Lead"));
   assert.deepEqual(chamadas, [], 'enviarPixel disparou "Lead" fora de produção');
 
-  // In production, with fbq already installed: no second init, no double
-  // PageView. This is also the only iniciarPixel path Node can run — the real
-  // loader touches document, which is exactly why it is guarded behind this.
+  // In production, the event that the campaign optimises for. PageView is not
+  // testable from here on purpose: it fires in config.js, a classic <head>
+  // script that touches document, and the guard for it is the source check
+  // further down.
   chamadas.length = 0;
   comJanela(
-    { location: { hostname: "essencial.drheliobarros.com.br" }, DI_CONFIG: { pixelId: "123" }, fbq: fbqFalso },
-    () => iniciarPixel()
-  );
-  assert.deepEqual(chamadas, [], "iniciarPixel repetiu init/PageView numa página que já tinha fbq");
-
-  // In production, the event that the campaign optimises for.
-  chamadas.length = 0;
-  comJanela({ location: { hostname: "essencial.drheliobarros.com.br" }, fbq: fbqFalso }, () =>
-    enviarPixel("Lead")
+    { location: { hostname: "essencial.drheliobarros.com.br" }, DI_CONFIG: { producao: true }, fbq: fbqFalso },
+    () => enviarPixel("Lead")
   );
   assert.deepEqual(chamadas, [["track", "Lead"]], 'enviarPixel não disparou track/"Lead" em produção');
 
   // Ad blocker, or iniciarPixel never ran: a reporting loss, never an exception
   // thrown from inside the submit handler that is showing the diagnosis.
-  comJanela({ location: { hostname: "essencial.drheliobarros.com.br" } }, () =>
-    assert.doesNotThrow(() => enviarPixel("Lead"), "enviarPixel explodiu sem fbq em vez de avisar")
+  comJanela(
+    { location: { hostname: "essencial.drheliobarros.com.br" }, DI_CONFIG: { producao: true } },
+    () => assert.doesNotThrow(() => enviarPixel("Lead"), "enviarPixel explodiu sem fbq em vez de avisar")
   );
 
   // The Lead fires from the same handler as the quiz-done beacon, between it
@@ -540,9 +555,46 @@ function termoProibidoEncontrado(texto) {
       !fonte.includes(achadoId[1]),
       `${nome} tem o id do pixel escrito na mão em vez de ler de config.js`
     );
+  }
+
+  // WHERE the pixel loads is the feature, not a detail. Until 25/08/2026 it
+  // was initialised from the module graph at the end of body, which put the
+  // PageView four network round trips deep (html -> quiz.js -> its imports ->
+  // fbevents.js) — and Meta counted 66 landing_page_views against the 209
+  // arrivals our own beacon recorded for the same paid traffic, with no
+  // console error anywhere. The campaign optimises OFFSITE_CONVERSIONS, so the
+  // undercount also starved the optimiser. These three assertions are what
+  // stop a refactor from pushing the load back down there.
+  assert.ok(
+    /window\.fbq\("init", window\.DI_CONFIG\.pixelId\)/.test(fonteConfigPixel) &&
+      /window\.fbq\("track", "PageView"\)/.test(fonteConfigPixel),
+    "config.js não inicia mais o pixel nem dispara PageView: nenhuma página é contada pela Meta"
+  );
+  assert.ok(
+    fonteConfigPixel.includes("connect.facebook.net/en_US/fbevents.js"),
+    "config.js não carrega mais o fbevents.js"
+  );
+  for (const [nome, url] of [
+    ["quiz.js", "./quiz.js"],
+    ["vsl.js", "./vsl.js"],
+    ["beacon.mjs", "./beacon.mjs"],
+    ["plano.html", "../../plano.html"],
+  ]) {
+    const fonte = readFileSync(new URL(url, import.meta.url), "utf8");
     assert.ok(
-      nome === "beacon.mjs" || /iniciarPixel\(\)/.test(fonte),
-      `${nome} não chama iniciarPixel(): a página fica invisível para o pixel`
+      !fonte.includes("connect.facebook.net"),
+      `${nome} voltou a carregar o pixel do grafo de módulos: o PageView atrasa e a Meta subconta`
+    );
+  }
+
+  // index.html, vsl.html e plano.html precisam carregar config.js, e ele tem
+  // que estar no <head>: é de lá que o PageView sai na primeira rodada.
+  for (const nome of ["index.html", "vsl.html", "plano.html"]) {
+    const html = readFileSync(new URL(`../../${nome}`, import.meta.url), "utf8");
+    const head = html.slice(0, html.indexOf("</head>"));
+    assert.ok(
+      /<script src="\/?quiz\/js\/config\.js"><\/script>/.test(head),
+      `${nome} não carrega config.js dentro do <head>: a página não conta PageView`
     );
   }
 }

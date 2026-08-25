@@ -2,7 +2,7 @@
 
 Fonte de verdade do texto **antes** de virar HTML. Spec: `docs/superpowers/specs/2026-08-06-quiz-vsl-essencial-design.md` §4 (telas) e §3 D9 (provas).
 
-**Ordem de exibição:** 12 perguntas + 5 telas de conteúdo + 1 captura = 18 telas. Depois: "analisando" (2,5 s) e resultado.
+**Ordem de exibição:** 11 perguntas + 1 captura = 12 telas. (Até 25/08/2026 eram 12 perguntas + 5 telas de conteúdo + 1 captura = 18 telas; a q12 de urgência e as telas de conteúdo c1–c5 saíram no corte do Nível 1 — ver docs/marketing/2026-08-25-essencial-funil-diagnostico.md no repo twenty-followup-sync.) Depois: "analisando" (2,5 s) e resultado.
 
 **Contrato com o código.** O `id` de cada opção é normativo. Ele casa com a tabela `OPENS` de `quiz/js/diagnostico.mjs`, e é o `value` que o HTML tem que emitir. Trocar um rótulo é seguro; trocar um `id` quebra o diagnóstico **em silêncio**.
 
@@ -24,7 +24,7 @@ Fonte de verdade do texto **antes** de virar HTML. Spec: `docs/superpowers/specs
 >
 > # Em que degrau o seu dinheiro travou?
 >
-> 12 perguntas. No fim você vê em qual dos quatro degraus está, e qual ficou aberto atrás.
+> 11 perguntas. No fim você vê em qual dos quatro degraus está, e qual ficou aberto atrás.
 >
 > **[ FAZER O DIAGNÓSTICO ]**
 >

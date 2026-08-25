@@ -7,10 +7,10 @@
 // the same id list would be a third place to drift.
 import { diagnosticar } from "./diagnostico.mjs";
 import { textoResultado } from "./resultado.mjs";
-// DOMINIO_DE_PRODUCAO guards both the lead POST below and the funnel beacon
-// in beacon.mjs: one regex, imported by both, instead of two copies that can
-// drift out of sync.
-import { DOMINIO_DE_PRODUCAO, enviarBeacon, enviarPixel, iniciarPixel } from "./beacon.mjs";
+// ehProducao() guards both the lead POST below and the funnel beacon in
+// beacon.mjs: one rule, read by both, instead of two copies that can drift out
+// of sync. The rule itself is declared in config.js — see the note there.
+import { ehProducao, enviarBeacon, enviarPixel } from "./beacon.mjs";
 
 const ESPERA_MS = 2500; // "analisando" screen, per copy.md
 const AVANCO_MS = 220; // pause after a tap, so the selection is visible before the screen turns
@@ -172,7 +172,7 @@ function guardarDiag(diag) {
 // invented here.
 function enviarLead(diag) {
   if (!cfg.leadUrl) return;
-  if (!DOMINIO_DE_PRODUCAO.test(window.location.hostname)) {
+  if (!ehProducao()) {
     console.info(
       `quiz: lead não enviado porque "${window.location.hostname}" está fora de drheliobarros.com.br. É de propósito, para teste local não gravar lead de verdade. O diagnóstico aparece normalmente.`
     );
@@ -233,6 +233,8 @@ function renderResultado(diag) {
   cta.href = texto.cta.href;
 }
 
-iniciarPixel();
+// PageView already fired in config.js, from <head> — four network round trips
+// earlier than here. What runs at this point is our own counter for the same
+// step, over our own domain.
 enviarBeacon("essencial-quiz", "view");
 mostrar(0);
