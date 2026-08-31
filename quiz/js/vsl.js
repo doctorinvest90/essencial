@@ -13,6 +13,8 @@ const video = document.getElementById("video-vsl");
 const avisoVideo = document.getElementById("aviso-video");
 const botaoSom = document.getElementById("video-som");
 const oferta = document.getElementById("oferta");
+const precoBarra = document.getElementById("preco-barra");
+const ctaBarra = document.getElementById("cta-barra");
 const ctaAnual = document.getElementById("cta-anual");
 const ctaTrimestral = document.getElementById("cta-trimestral");
 
@@ -32,13 +34,47 @@ const overrideParam = params.get("offer");
 const overrideValido = overrideParam !== null && !Number.isNaN(Number(overrideParam));
 const delaySeconds = overrideValido ? Number(overrideParam) : cfg.offerDelaySeconds;
 
+// `?preco=N` is the strip's own override, symmetric with `?offer=N`: without a
+// separate knob the two thresholds collapse onto the same second under a small
+// `?offer`, and the strip can never be seen on its own to be checked.
+const precoParam = params.get("preco");
+const precoOverrideValido = precoParam !== null && !Number.isNaN(Number(precoParam));
+const precoDelaySeconds = precoOverrideValido
+  ? Number(precoParam)
+  : overrideValido
+    ? Math.min(Number(overrideParam), cfg.precoDelaySeconds)
+    : cfg.precoDelaySeconds;
+
 let acumulado = 0;
 let ultimoTempo = null;
 let ofertaVisivel = false;
+let barraVisivel = false;
+
+// The strip is the answer to a measured failure, not a second offer: on
+// 31/08/2026, 3 of the 4 leads who opened this page left before 111s and were
+// never shown a price or a button. It carries price and checkout only -- the
+// feature list stays in the box below, which still waits for the narration to
+// name the product.
+function revelarBarra() {
+  if (barraVisivel || ofertaVisivel) return;
+  barraVisivel = true;
+  enviarBeacon("essencial-vsl-preco", "view");
+  precoBarra.hidden = false;
+  requestAnimationFrame(() => precoBarra.classList.add("visivel"));
+}
+
+function esconderBarra() {
+  if (!barraVisivel) return;
+  barraVisivel = false;
+  precoBarra.classList.remove("visivel");
+  precoBarra.hidden = true;
+}
 
 function revelarOferta() {
   if (ofertaVisivel) return;
   ofertaVisivel = true;
+  // One buy button on screen at a time: the box says everything the strip did.
+  esconderBarra();
   enviarBeacon("essencial-vsl-offer", "view");
   oferta.hidden = false;
   // Two steps so the browser paints the hidden->block change before the
@@ -58,8 +94,32 @@ video.addEventListener("timeupdate", () => {
   // provable from inside this file (it needs a DOM to even load).
   acumulado = acumular(acumulado, ultimoTempo, video.currentTime);
   ultimoTempo = video.currentTime;
+  // Same pure predicate, two thresholds: the strip first, the box at the
+  // sentence that names the product. Nothing new to get wrong.
+  if (liberaOferta(acumulado, precoDelaySeconds)) revelarBarra();
   if (liberaOferta(acumulado, delaySeconds)) revelarOferta();
+  marcarProgresso();
 });
+
+// --- Drop-off marks -------------------------------------------------------
+// Until now this page reported two bits: "opened" and "reached 111s". When 3
+// of 4 visitors fall in between, that is not enough to know whether the video
+// loses them at the hook, at the middle, or one beat short of the offer. These
+// fire once each, on playhead position (not accumulated time), because what we
+// want to read is WHERE in the cut people leave.
+const MARCOS = [25, 50, 75];
+const marcosEnviados = new Set();
+
+function marcarProgresso() {
+  if (!video.duration || !Number.isFinite(video.duration)) return;
+  const pct = (video.currentTime / video.duration) * 100;
+  for (const marco of MARCOS) {
+    if (pct >= marco && !marcosEnviados.has(marco)) {
+      marcosEnviados.add(marco);
+      enviarBeacon(`essencial-vsl-${marco}`, "view");
+    }
+  }
+}
 
 // Fallback that keeps a misconfigured delay from hiding the offer forever: a
 // video that reached the end was, by definition, watched enough. Without it,
@@ -67,7 +127,13 @@ video.addEventListener("timeupdate", () => {
 // measurement, a shorter re-cut, one digit too many) means the visitor
 // watches the whole thing and never sees a price or a button, with no error
 // and no beacon, and the funnel reads it as "the video loses people early".
-video.addEventListener("ended", revelarOferta);
+video.addEventListener("ended", () => {
+  // A video that ended was, by definition, watched to 100%: close out any mark
+  // a coarse last timeupdate skipped, so the drop-off curve has no phantom
+  // hole at 75% for people who actually finished.
+  marcarProgresso();
+  revelarOferta();
+});
 
 // --- Sound overlay --------------------------------------------------------
 // The video autoplays muted, because that is the only autoplay any browser
@@ -151,6 +217,7 @@ function comDegrau(checkoutUrl, degrau) {
 
 const degrau = lerDegrauDoQuiz();
 if (cfg.checkoutAnual) ctaAnual.href = comDegrau(cfg.checkoutAnual, degrau);
+if (cfg.checkoutAnual) ctaBarra.href = comDegrau(cfg.checkoutAnual, degrau);
 if (cfg.checkoutTrimestral) ctaTrimestral.href = comDegrau(cfg.checkoutTrimestral, degrau);
 
 // Both checkout options are the same funnel step. sendBeacon (inside
@@ -161,3 +228,4 @@ function onCheckoutClick() {
 }
 ctaAnual.addEventListener("click", onCheckoutClick);
 ctaTrimestral.addEventListener("click", onCheckoutClick);
+ctaBarra.addEventListener("click", onCheckoutClick);

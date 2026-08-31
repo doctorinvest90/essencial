@@ -651,11 +651,18 @@ function termoProibidoEncontrado(texto) {
     "essencial-quiz": "view",
     "essencial-quiz-done": "view",
     "essencial-vsl": "view",
+    "essencial-vsl-preco": "view",
     "essencial-vsl-offer": "view",
     "essencial-plano": "view",
     essencial: "checkout_click",
   };
   const EVENTOS_VALIDOS_BACKEND = new Set(["view", "checkout_click"]);
+  // Not in the table above: the drop-off marks (essencial-vsl-25/50/75), whose
+  // page name is built from a template literal in vsl.js and so is invisible to
+  // the literal-pair regex below. They are covered further down, where MARCOS
+  // is read straight out of the source. Backend-wise they are safe by
+  // construction: FunnelEventIn only validates `event` (page is a free `str`),
+  // and they all send "view".
 
   const fontes = [
     ["quiz.js", readFileSync(new URL("./quiz.js", import.meta.url), "utf8")],
@@ -673,8 +680,8 @@ function termoProibidoEncontrado(texto) {
 
   assert.equal(
     chamadas.length,
-    7,
-    `esperava 7 chamadas a enviarBeacon no total (quiz.js + vsl.js + plano.html), achou ${chamadas.length}`
+    8,
+    `esperava 8 chamadas a enviarBeacon no total (quiz.js + vsl.js + plano.html), achou ${chamadas.length}`
   );
 
   const pagesVistas = new Set();
@@ -845,12 +852,63 @@ function termoProibidoEncontrado(texto) {
   // constant would just be one more number to drift on the next re-render.
   assert.ok(delayConfigurado > 0, `offerDelaySeconds tem que ser positivo, está ${delayConfigurado}`);
 
+  // precoDelaySeconds gates the price strip, which is the page's only answer to
+  // the failure measured on 31/08/2026 (3 of 4 leads left before 111s and never
+  // saw a price). Same fail-closed arithmetic, so the same three ways to break
+  // it silently: absent, text, or -- the one that is specific to this number --
+  // set at or past offerDelaySeconds, which would make the strip appear after
+  // the box that replaces it, i.e. never.
+  const achadoPreco = /precoDelaySeconds:\s*([^,\n]+)/.exec(fonteConfig);
+  assert.ok(achadoPreco, "config.js não declara mais precoDelaySeconds");
+  const precoConfigurado = Number(achadoPreco[1].trim());
+  assert.ok(
+    Number.isFinite(precoConfigurado) && !/["']/.test(achadoPreco[1]),
+    `precoDelaySeconds tem que ser número, config.js traz ${achadoPreco[1].trim()}`
+  );
+  assert.ok(precoConfigurado > 0, `precoDelaySeconds tem que ser positivo, está ${precoConfigurado}`);
+  assert.ok(
+    precoConfigurado < delayConfigurado,
+    `precoDelaySeconds (${precoConfigurado}) tem que ser menor que offerDelaySeconds (${delayConfigurado}): a barra de preço existe para chegar ANTES da caixa, e a caixa a esconde ao abrir`
+  );
+
+  // The strip and the drop-off marks are the two things that turn /vsl from a
+  // page reporting two bits ("opened", "reached 111s") into one that says where
+  // people leave. Both are easy to delete by accident in a refactor and neither
+  // fails loudly when gone -- the funnel just goes quiet again.
+  assert.ok(
+    /liberaOferta\(acumulado,\s*precoDelaySeconds\)/.test(fonteVsl),
+    "vsl.js não libera mais a barra de preço por precoDelaySeconds: a página voltou a esconder o preço até os 111s"
+  );
+  for (const marco of [25, 50, 75]) {
+    assert.ok(
+      new RegExp(`\\b${marco}\\b`).test(/const MARCOS = \[([^\]]*)\]/.exec(fonteVsl)?.[1] ?? ""),
+      `vsl.js perdeu o marco de ${marco}% do vídeo: sem ele a curva de abandono fica cega nesse trecho`
+    );
+  }
+
   // The video starts on its own, muted, and the overlay is what turns sound on.
   // Three things have to stay true together or the page breaks in ways that look
   // fine on screen: autoplay without muted is blocked by every browser (a video
   // that never starts), the overlay has to exist for sound to be reachable at
   // all, and turning sound on has to zero the accumulator, or the silent preview
   // buys seconds towards a R$997 button the visitor never heard justified.
+
+  // Every id vsl.js reaches for has to exist in vsl.html. This is the one class
+  // of mistake a code review reliably misses and the browser punishes hardest:
+  // vsl.js touches the DOM at module scope, so a single missing id throws
+  // before the checkout links are wired -- the video plays, the page looks
+  // fine, and NOTHING is buyable. Derived from the source, so an id added
+  // later is covered without touching this test.
+  const htmlVsl = readFileSync(new URL("../../vsl.html", import.meta.url), "utf8");
+  const idsUsados = [...fonteVsl.matchAll(/getElementById\("([^"]+)"\)/g)].map((m) => m[1]);
+  assert.ok(idsUsados.length > 0, "vsl.js não busca mais nenhum elemento por id: o regex abaixo apodreceu");
+  for (const id of idsUsados) {
+    assert.ok(
+      new RegExp(`id="${id}"`).test(htmlVsl),
+      `vsl.js busca #${id}, que não existe em vsl.html: no escopo de módulo isso estoura antes de ligar os links de checkout e a página fica sem nada clicável`
+    );
+  }
+
   const fonteHtml = readFileSync(new URL("../../vsl.html", import.meta.url), "utf8");
   const tagVideo = /<video\b[^>]*id="video-vsl"[^>]*>/.exec(fonteHtml);
   assert.ok(tagVideo, "vsl.html não tem mais o elemento #video-vsl");

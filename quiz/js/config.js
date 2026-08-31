@@ -19,6 +19,13 @@ window.DI_CONFIG = {
   // (QUIZ_CAPI_PIXEL_ID). One pixel for the whole house is what lets a single
   // ad account optimise, and later dedup pixel against server events.
   pixelId: "1893562330686295",
+  // The price bar (a fixed strip with R$997 and the button) appears here, long
+  // before the full offer box. Measured 31/08/2026: of the 4 leads who opened
+  // /vsl, 3 left before 111s and therefore never saw a price or a button at
+  // all. This number is what stops the page from being a locked door; the box
+  // below still waits for the narration to name the product.
+  // Must stay smaller than offerDelaySeconds (the self-check enforces it).
+  precoDelaySeconds: 40,
   offerDelaySeconds: 111.199, // measured on the final cut: start of the SRT cue that
   // names the product ("Ele se chama Doctor Invest Essencial"). The 128 that stood
   // here was a writing-time estimate at 150 words/min; the cloned voice reads at 174,

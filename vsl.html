@@ -41,6 +41,21 @@
       <p class="video-aviso" id="aviso-video" hidden>O vídeo está indisponível no momento. <a href="/plano">Leia o plano completo</a> enquanto isso.</p>
     </div>
 
+    <!-- Price strip. Appears at cfg.precoDelaySeconds, well before the offer
+         box below, and stays pinned to the bottom of the viewport. It exists
+         because the box at 111s was a locked door: measured on 31/08/2026,
+         3 of the 4 leads who opened this page left without ever seeing a price
+         or a button. It carries no feature list on purpose -- the list belongs
+         to the box, which still opens on the sentence that names the product,
+         so nothing here contradicts what the narration is saying. -->
+    <div class="preco-barra" id="preco-barra" hidden>
+      <div class="preco-barra-texto">
+        <strong>Doctor Invest Essencial</strong>
+        <span>R$ 997 por ano · ou R$ 297 a cada 3 meses</span>
+      </div>
+      <a class="btn" id="cta-barra" href="">Quero meu plano →</a>
+    </div>
+
     <section class="oferta" id="oferta" hidden>
       <h2>Doctor Invest Essencial</h2>
       <p class="oferta-teto">Feito para o médico com até R$ 500 mil investidos.</p>
@@ -72,8 +87,8 @@
 
 <footer>
   <div class="wrap">
+    <p class="rodape-links rodape-links-topo"><a href="/plano">Prefere ler tudo antes de decidir? Veja o plano completo →</a></p>
     <p class="disclaimer">O Doctor Invest Essencial é um serviço de consultoria de investimentos em formato digital prestado por Helio Cardoso de Barros (CNPJ 31.364.642/0001-01). Não prometemos rentabilidade, enriquecimento rápido ou ausência de riscos. As orientações dependem das informações fornecidas, do perfil do cliente, dos objetivos e das regras vigentes; investimentos envolvem riscos, incluindo perda de capital. A execução dos investimentos é realizada pelo próprio cliente em sua instituição financeira. Casos que ultrapassem o escopo do produto poderão ser encaminhados para análise individual.</p>
-    <p class="rodape-links"><a href="/plano">Prefere ler tudo antes de decidir? Veja o plano completo →</a></p>
     <p class="marca">DOCTOR INVEST · @drheliobarros</p>
   </div>
 </footer>

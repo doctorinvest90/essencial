@@ -118,3 +118,49 @@
 .rodape-links { margin-bottom: 14px; letter-spacing: normal; }
 .rodape-links a { color: var(--gold); }
 .marca { letter-spacing: 1px; }
+
+/* price strip: pinned to the bottom of the viewport from precoDelaySeconds on.
+   Fixed, not inline, because the whole point is that it stays reachable while
+   the visitor is still watching -- an inline block below the player is exactly
+   as invisible as the offer box was. Hidden again once the full offer opens,
+   so the page never shows two buy buttons at once. */
+.preco-barra {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 12px 18px calc(12px + env(safe-area-inset-bottom));
+  background: rgba(6, 12, 20, .96);
+  border-top: 1px solid rgba(201, 168, 76, .35);
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, .45);
+  opacity: 0;
+  transform: translateY(100%);
+  transition: opacity .35s ease, transform .35s ease;
+}
+.preco-barra[hidden] { display: none; }
+.preco-barra.visivel { opacity: 1; transform: none; }
+.preco-barra-texto { text-align: left; line-height: 1.35; }
+.preco-barra-texto strong { display: block; font-size: 15.5px; }
+.preco-barra-texto span { font-size: 13.5px; opacity: .8; }
+.preco-barra .btn { padding: 12px 22px; font-size: 15px; white-space: nowrap; }
+
+@media (max-width: 520px) {
+  .preco-barra { gap: 10px; justify-content: space-between; }
+  .preco-barra .btn { padding: 11px 16px; font-size: 14px; }
+}
+
+/* the escape to /plano now sits above the legal disclaimer instead of under
+   six lines of it: it is the only path forward for someone who is not going to
+   sit through the video, and it was measurably being used (the 12/08 lead went
+   to /plano twice) while buried. */
+.rodape-links-topo { margin-bottom: 18px; font-size: 15px; }
+
+/* the fixed strip overlaps the end of the page; give the footer room so the
+   disclaimer and the /plano link stay readable behind it. */
+body:has(.preco-barra.visivel) footer { padding-bottom: 92px; }
