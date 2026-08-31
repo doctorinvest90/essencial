@@ -1,0 +1,3 @@
+# Worktrees do Claude Code vivem dentro de .claude/ e não pertencem ao site.
+.claude/worktrees/
+.DS_Store

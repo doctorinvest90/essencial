@@ -98,6 +98,10 @@
 /* quiz.css does not define .btn-sub (plano.html has its own copy in an inline
    <style>; this page has no inline style, so it needs its own rule) */
 .btn-sub { display: block; font-size: 13px; font-weight: 300; opacity: .8; margin-top: 10px; letter-spacing: 1px; }
+/* Sem esta linha o `hidden` da nota do trimestral (vsl.js, janela da campanha)
+   não esconde nada: um seletor de classe com display:block vence o
+   [hidden]{display:none} do navegador. */
+.btn-sub[hidden] { display: none; }
 .btn-sub a { color: var(--gold); }
 .oferta-preco .valor {
   font-family: "Cormorant Garamond", serif;

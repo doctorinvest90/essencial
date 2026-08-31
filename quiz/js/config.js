@@ -26,6 +26,17 @@ window.DI_CONFIG = {
   // below still waits for the narration to name the product.
   // Must stay smaller than offerDelaySeconds (the self-check enforces it).
   precoDelaySeconds: 40,
+  // Janela da campanha Essencial (Diário de Campanha, Linha de Marcha):
+  // aquecimento 26/10, oferta aberta 03/11, fechamento 16/11. Duas datas, três
+  // páginas: /oferta troca o botão pela fila de janeiro quando a janela fecha,
+  // /vsl e /plano escondem o trimestral de R$ 297 enquanto ela corre.
+  //
+  // O offset -03:00 é o que faz o prazo ser 23:59 de Brasília e não do relógio
+  // de quem está lendo. 16/11 é data real: prorrogar não custa esta campanha,
+  // custa a próxima, porque em janeiro a conversa é com a mesma lista.
+  // A comparação mora em campanha.mjs, com self-check em node.
+  campanhaAbre: "2026-10-26T00:00:00-03:00",
+  campanhaFecha: "2026-11-16T23:59:59-03:00",
   offerDelaySeconds: 111.199, // measured on the final cut: start of the SRT cue that
   // names the product ("Ele se chama Doctor Invest Essencial"). The 128 that stood
   // here was a writing-time estimate at 150 words/min; the cloned voice reads at 174,

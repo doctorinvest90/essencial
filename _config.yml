@@ -8,4 +8,5 @@
 exclude:
   - quiz/copy.md
   - quiz/js/diagnostico.selftest.mjs
+  - quiz/js/campanha.selftest.mjs
   - FREEZE.md

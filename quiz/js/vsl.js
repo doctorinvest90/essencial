@@ -6,6 +6,8 @@
 // timing is unchanged.
 import { enviarBeacon } from "./beacon.mjs";
 import { acumular, liberaOferta } from "./acumulador.mjs";
+import { lerDegrauDoQuiz, comDegrau } from "./checkout.mjs";
+import { estadoAgora, ABERTA } from "./campanha.mjs";
 
 const cfg = window.DI_CONFIG || {};
 
@@ -184,36 +186,9 @@ video.addEventListener("error", () => {
 // --- Checkout links ---------------------------------------------------
 // Base URLs live only in config.js; a price or SKU change never touches this
 // file. utm_content carries the quiz degrau when a session exists; without
-// one (email, e-book bridge, ad) the links are just the bare checkout.
-
-// Mirrors the Degrau domain of diagnostico.mjs (the OPENS keys A/B/C/D),
-// which is where these four letters are defined and where a fifth one would
-// be born. Not imported because this page must not pull the diagnosis engine
-// just to validate a session value; if that domain ever changes, change it
-// here too.
-const DEGRAUS_VALIDOS = ["A", "B", "C", "D"];
-
-function lerDegrauDoQuiz() {
-  try {
-    const bruto = sessionStorage.getItem("essencial.diag");
-    if (!bruto) return null;
-    const diag = JSON.parse(bruto);
-    return DEGRAUS_VALIDOS.includes(diag.real) ? diag.real : null;
-  } catch (falha) {
-    console.warn("vsl: sessionStorage indisponível ou diagnóstico inválido", falha);
-    return null;
-  }
-}
-
-function comDegrau(checkoutUrl, degrau) {
-  try {
-    const alvo = new URL(checkoutUrl);
-    if (degrau) alvo.searchParams.set("utm_content", `degrau-${degrau}`);
-    return alvo.toString();
-  } catch (falha) {
-    return checkoutUrl;
-  }
-}
+// one (email, e-book bridge, ad) the links are just the bare checkout. The two
+// helpers moved to checkout.mjs when /oferta became the third page with a buy
+// button — see the note there.
 
 const degrau = lerDegrauDoQuiz();
 if (cfg.checkoutAnual) ctaAnual.href = comDegrau(cfg.checkoutAnual, degrau);
@@ -229,3 +204,18 @@ function onCheckoutClick() {
 ctaAnual.addEventListener("click", onCheckoutClick);
 ctaTrimestral.addEventListener("click", onCheckoutClick);
 ctaBarra.addEventListener("click", onCheckoutClick);
+
+// --- O trimestral sai de cena enquanto a campanha corre --------------------
+// Decisão do Diário de Campanha (§ Produto trabalhado): numa campanha de
+// validação R$ 297 compra um "vou testar" e polui o sinal, e a página de
+// oferta não menciona o trimestral. Deixá-lo aqui faria o lead que vem pelo
+// quiz ver R$ 297 no caminho e chegar em /oferta achando que ficou mais caro.
+//
+// Automático nas duas pontas de propósito: nada depende de alguém publicar
+// alguma coisa em 26/10 nem em 17/11. Fora da janela, a página é a de sempre.
+if (estadoAgora(cfg) === ABERTA) {
+  const linhaPreco = document.getElementById("preco-barra-linha");
+  const notaTrimestral = document.getElementById("nota-trimestral");
+  if (linhaPreco) linhaPreco.textContent = "R$ 997 por ano";
+  if (notaTrimestral) notaTrimestral.hidden = true;
+}
