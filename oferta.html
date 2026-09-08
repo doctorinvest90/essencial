@@ -47,6 +47,12 @@ strong{font-weight:500}
 .fatos div:last-child{border-right:0}
 .fatos dt{font-size:11px;letter-spacing:2.4px;text-transform:uppercase;opacity:.6;margin-bottom:4px}
 .fatos dd{font-size:19px;font-weight:400;line-height:1.25}
+/* As três promessas que sustentam o produto, logo abaixo do botão. Ficam fora
+   dos blocos .quando-aberta/.quando-fechada porque continuam verdadeiras com a
+   turma fechada. */
+.confianca{list-style:none;display:flex;flex-wrap:wrap;gap:8px 26px;margin-top:26px;max-width:540px}
+.confianca li{position:relative;padding-left:18px;font-size:14.5px;opacity:.85;letter-spacing:.2px}
+.confianca li::before{content:"·";position:absolute;left:4px;color:var(--gold);font-weight:500}
 
 /* seções */
 section.faixa{padding:76px 0}
@@ -72,6 +78,8 @@ section.gradiente{background:linear-gradient(160deg,#152538,var(--navy));color:v
 .card{background:rgba(247,245,240,.05);border:1px solid rgba(201,168,76,.25);border-radius:10px;padding:24px}
 .card h3{font-size:20px;margin-bottom:8px;color:var(--gold)}
 .card p{font-size:15.5px;opacity:.9}
+.card.largo{grid-column:1/-1;border-color:rgba(201,168,76,.5)}
+.card.largo p{max-width:760px}
 
 /* prova de método */
 .recortes{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:26px}
@@ -79,6 +87,12 @@ section.gradiente{background:linear-gradient(160deg,#152538,var(--navy));color:v
 .recorte img{width:100%;display:block;border:1px solid rgba(13,27,42,.14);border-radius:6px;box-shadow:0 10px 30px rgba(13,27,42,.12);transition:transform .15s,box-shadow .15s}
 .recorte:hover img{transform:translateY(-3px);box-shadow:0 16px 40px rgba(13,27,42,.2)}
 .recorte figcaption{font-size:13.5px;line-height:1.4;margin-top:10px;opacity:.75}
+.recorte figcaption strong{display:block;font-weight:500;opacity:1;margin-bottom:6px}
+/* O que olhar em cada página. Faz o papel das setas de um mockup anotado: quem
+   não abre o PDF ainda sai sabendo o que o documento decide. */
+.setas{list-style:none}
+.setas li{position:relative;padding:2px 0 2px 16px}
+.setas li::before{content:"→";position:absolute;left:0;color:var(--gold);font-weight:500}
 .nota{font-size:14.5px;opacity:.72;max-width:740px;margin-top:18px}
 .linkpdf{display:inline-block;font-size:16px;color:var(--navy2);font-weight:400;border-bottom:1px solid var(--gold);text-decoration:none;padding-bottom:2px}
 
@@ -182,6 +196,12 @@ section.gradiente{background:linear-gradient(160deg,#152538,var(--navy));color:v
         <div class="quando-fechada" hidden>
           <span class="btn-sub" style="margin-top:0">As 20 vagas desta turma fecharam em 16 de novembro. A próxima turma abre em janeiro.</span>
         </div>
+
+        <ul class="confianca">
+          <li>Você executa na sua corretora. Eu nunca entro na sua conta.</li>
+          <li>Sem comissão em nada que estiver no plano.</li>
+          <li>Cada plano revisado por mim, com o seu nome nele.</li>
+        </ul>
       </div>
       <img class="hero-foto" src="/assets/helio-1.jpg" alt="Hélio Barros">
     </div>
@@ -227,6 +247,7 @@ section.gradiente{background:linear-gradient(160deg,#152538,var(--navy));color:v
       <div class="card"><h3>Carteira de fundos de índice</h3><p>Montada para o seu perfil, com código e quantidade, executada por você na sua corretora.</p></div>
       <div class="card"><h3>Acompanhamento mensal</h3><p>Todo mês você confirma o saldo em dois minutos e recebe a orientação de para onde vai o aporte.</p></div>
       <div class="card"><h3>Imposto resolvido</h3><p>As ferramentas certas para apurar, e um método que evita vender ativo, que é o que gera imposto.</p></div>
+      <div class="card largo"><h3>O que fazer com o que você já tem</h3><p>Cada posição fora da carteira-alvo recebe um veredito: manter, reduzir ou sair, e em que ordem, para não gerar imposto sem necessidade. A decisão de vender continua sua. O plano diz como fazer sem pressa, e o que cabe na isenção antes de qualquer venda.</p></div>
     </div>
   </div>
 </section>
@@ -241,19 +262,47 @@ section.gradiente{background:linear-gradient(160deg,#152538,var(--navy));color:v
     <div class="recortes">
       <figure><a class="recorte" href="/assets/recorte-1.png" target="_blank" rel="noopener">
         <img src="/assets/recorte-1.png" alt="Página 1 do plano de exemplo: prioridade do momento, raio-x financeiro, reserva de emergência e classificação das dívidas.">
-        <figcaption>1. A prioridade do momento, o raio-x, a reserva e as dívidas classificadas por urgência.</figcaption>
+        <figcaption>
+          <strong>1. Prioridade, raio-x, reserva e dívidas</strong>
+          <ul class="setas">
+            <li>A nota de cada eixo, de 0 a 5: caixa, dívidas, proteção, planejamento e investimentos.</li>
+            <li>Quanto falta na reserva, em reais, e onde ela deve ficar.</li>
+            <li>Cada dívida com saldo, taxa e o que fazer com ela.</li>
+          </ul>
+        </figcaption>
       </a></figure>
       <figure><a class="recorte" href="/assets/recorte-2.png" target="_blank" rel="noopener">
         <img src="/assets/recorte-2.png" alt="Página 2 do plano de exemplo: carteira-alvo com a função e a alocação de cada fundo de índice.">
-        <figcaption>2. A carteira-alvo, com a função de cada posição escrita ao lado dela.</figcaption>
+        <figcaption>
+          <strong>2. A carteira-alvo</strong>
+          <ul class="setas">
+            <li>Só fundos de índice do universo aprovado, com a alocação por classe.</li>
+            <li>A função de cada posição escrita ao lado dela.</li>
+            <li>A versão da política que gerou a carteira, para você auditar depois.</li>
+          </ul>
+        </figcaption>
       </a></figure>
       <figure><a class="recorte" href="/assets/recorte-3.png" target="_blank" rel="noopener">
         <img src="/assets/recorte-3.png" alt="Página 3 do plano de exemplo: primeiras ordens sugeridas com quantidade e valor, orientação de venda e projeção patrimonial marcada como simulação.">
-        <figcaption>3. As primeiras ordens, uma a uma, com quantidade e valor de referência.</figcaption>
+        <figcaption>
+          <strong>3. Primeiras ordens e o que você já tem</strong>
+          <ul class="setas">
+            <li>As primeiras ordens: código, quantidade e valor de referência.</li>
+            <li>O que fazer com as posições que já estão na sua conta: manter, reduzir ou sair, e como fazer sem gerar imposto à toa.</li>
+            <li>O aporte mensal e a ordem de prioridade entre reserva e carteira.</li>
+          </ul>
+        </figcaption>
       </a></figure>
       <figure><a class="recorte" href="/assets/recorte-4.png" target="_blank" rel="noopener">
         <img src="/assets/recorte-4.png" alt="Página 4 do plano de exemplo: triagem de previdência, lacunas de proteção e a seção de imposto de renda.">
-        <figcaption>4. Previdência, lacunas de proteção e o que muda no seu imposto.</figcaption>
+        <figcaption>
+          <strong>4. Previdência, proteção e imposto</strong>
+          <ul class="setas">
+            <li>A taxa do plano de previdência que você já tem e a economia estimada por ano se ele for revisto.</li>
+            <li>As lacunas de vida e de incapacidade, por dependente.</li>
+            <li>O que muda no imposto com fundo de índice, e como o método evita a venda.</li>
+          </ul>
+        </figcaption>
       </a></figure>
     </div>
 
@@ -294,6 +343,7 @@ section.gradiente{background:linear-gradient(160deg,#152538,var(--navy));color:v
         <h3>Kit de boas-vindas</h3>
         <div>
           <p>“A Tarifa Invisível”, o material sobre o que a sua carteira paga todo ano sem que ninguém te mostre a conta. Vem junto no primeiro e-mail.</p>
+          <p class="trava">Numa posição de R$ 300 mil, cada ponto percentual de taxa de administração são R$ 3.000 por ano, descontados de dentro da cota, sem uma linha no extrato.</p>
         </div>
       </div>
     </div>
@@ -358,7 +408,7 @@ section.gradiente{background:linear-gradient(160deg,#152538,var(--navy));color:v
 <section class="faixa">
   <div class="wrap estreito">
     <h2>Depois que você entra</h2>
-    <p class="intro">Quatro passos, e o primeiro é o contrato.</p>
+    <p class="intro">Cinco passos, e o primeiro é o contrato.</p>
     <div class="passo">
       <div class="num">1</div>
       <div><h3>Contrato</h3><p>Você assina antes de qualquer coisa. Nenhuma recomendação sai daqui sem contrato assinado, sem exceção.</p></div>
@@ -373,7 +423,11 @@ section.gradiente{background:linear-gradient(160deg,#152538,var(--navy));color:v
     </div>
     <div class="passo">
       <div class="num">4</div>
-      <div><h3>Acompanhamento mensal</h3><p>Todo mês você confirma o saldo em dois minutos e recebe a orientação do aporte: para onde vai o dinheiro novo, em qual quantidade, e por quê.</p></div>
+      <div><h3>Acompanhamento mensal</h3><p>Todo mês você confirma o saldo em dois minutos e recebe a orientação do aporte: para onde vai o dinheiro novo, em qual quantidade, e por quê. A cada confirmação o motor compara a carteira com o alvo; se ela sair da banda, o plano avisa antes de você perguntar.</p></div>
+    </div>
+    <div class="passo">
+      <div class="num">5</div>
+      <div><h3>Dúvida no meio do caminho</h3><p>Você responde o e-mail que trouxe o plano ou escreve no WhatsApp oficial. A resposta sai em até dois dias úteis e é minha, sem script e sem atendente. Dúvida de método a gente resolve ali; recomendação individual continua no documento escrito, que é onde ela pode ser auditada.</p></div>
     </div>
   </div>
 </section>
@@ -403,6 +457,10 @@ section.gradiente{background:linear-gradient(160deg,#152538,var(--navy));color:v
     <details>
       <summary>Posso cancelar?</summary>
       <p>Sim. Sete dias de arrependimento pelo Código de Defesa do Consumidor, sem justificativa. E mais: quinze dias depois de receber o plano, se as prioridades não estiverem claras para você, a devolução é integral. As duas cláusulas estão no contrato que você assina antes de começar.</p>
+    </details>
+    <details>
+      <summary>Como tiro dúvida depois que o plano chega?</summary>
+      <p>Respondendo o e-mail que trouxe o plano, ou pelo WhatsApp oficial. Eu respondo em até dois dias úteis. O que muda a recomendação (uma venda, um bônus, uma mudança de vida) entra no plano por escrito, para ficar registrado; o resto se resolve na conversa.</p>
     </details>
     <details>
       <summary>Você recebe comissão de alguém?</summary>
