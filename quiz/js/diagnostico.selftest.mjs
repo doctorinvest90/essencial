@@ -606,9 +606,36 @@ function termoProibidoEncontrado(texto) {
   // stop a refactor from pushing the load back down there.
   assert.ok(
     /window\.fbq\("init", window\.DI_CONFIG\.pixelId\)/.test(fonteConfigPixel) &&
-      /window\.fbq\("track", "PageView"\)/.test(fonteConfigPixel),
+      /window\.fbq\("track", "PageView", \{\}, \{ eventID: window\.DI_CONFIG\.pageViewEventId \}\)/.test(
+        fonteConfigPixel
+      ),
     "config.js não inicia mais o pixel nem dispara PageView: nenhuma página é contada pela Meta"
   );
+  // O eventID do PageView passou a existir em 12/09/2026, quando o beacon
+  // começou a reportar a chegada server-side (FUNNEL_CAPI_PAGEVIEW_PAGE em
+  // main.py). Meta deduplica navegador × servidor por (event_name, event_id):
+  // um dos dois lados sem o id conta a MESMA chegada duas vezes, e o
+  // denominador dobrado faz todo custo por chegada da conta parecer metade do
+  // que é. Estas três assertivas mantêm os dois lados amarrados.
+  assert.ok(
+    /window\.DI_CONFIG\.pageViewEventId =/.test(fonteConfigPixel),
+    "config.js não gera mais pageViewEventId: o PageView do servidor duplicaria a chegada"
+  );
+  assert.ok(
+    /crypto\.randomUUID/.test(fonteConfigPixel),
+    "pageViewEventId deixou de usar randomUUID: id previsível colide entre visitantes"
+  );
+  {
+    const fonteBeacon = readFileSync(new URL("./beacon.mjs", import.meta.url), "utf8");
+    assert.ok(
+      /pageViewEventId/.test(fonteBeacon) && /fbclid/.test(fonteBeacon),
+      "beacon.mjs não manda mais event_id/fbclid: o servidor não tem como reportar a chegada"
+    );
+    assert.ok(
+      /if \(event === "view"\)/.test(fonteBeacon),
+      "beacon.mjs manda event_id/fbclid fora do 'view': só a chegada tem PageView no outro lado"
+    );
+  }
   assert.ok(
     fonteConfigPixel.includes("connect.facebook.net/en_US/fbevents.js"),
     "config.js não carrega mais o fbevents.js"

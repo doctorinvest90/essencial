@@ -47,7 +47,7 @@ export function enviarBeacon(page, event) {
   }
   try {
     const params = new URLSearchParams(window.location.search);
-    const payload = JSON.stringify({
+    const corpo = {
       page,
       event,
       utm_source: params.get("utm_source"),
@@ -56,7 +56,23 @@ export function enviarBeacon(page, event) {
       // the checkout links carry the quiz degrau in it. Passing it through is
       // what turns the funnel counts into conversion per degrau.
       utm_content: params.get("utm_content"),
-    });
+    };
+    // --- arrival reported server-side too ------------------------------------
+    // Only on "view", and only these two fields, which the backend uses to
+    // build the Meta PageView and then DROPS — they are never written to
+    // funnel_tarifa.jsonl, whose whole set of keys is PII-free by design
+    // (CLAUDE.md §4.4). See the LGPD block in track_funnel_event.
+    //
+    // `event_id` is the id config.js already gave the browser PageView: Meta
+    // dedups the two paths by it, so without it the same arrival counts twice.
+    // `fbclid` is the only matching key the server gets — no personal data.
+    // A visit with no fbclid is organic; the backend skips it rather than
+    // substituting anything.
+    if (event === "view") {
+      corpo.event_id = (window.DI_CONFIG || {}).pageViewEventId || null;
+      corpo.fbclid = params.get("fbclid");
+    }
+    const payload = JSON.stringify(corpo);
     // sendBeacon survives the navigation a checkout click triggers right
     // after it fires; fetch+keepalive is the fallback for browsers without
     // it (same pair tarifa-lp already uses for this endpoint).

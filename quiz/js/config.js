@@ -65,12 +65,35 @@ window.DI_CONFIG.producao = DOMINIO_DE_PRODUCAO.test(window.location.hostname);
 // graph brings the undercount back.
 //
 // Not here on purpose: the "Lead" event (it belongs at quiz completion, see
-// enviarPixel in beacon.mjs) and the server-side CAPI, which is the next
-// upgrade — POST /api/quiz/lead already receives the lead and the fbclid.
+// enviarPixel in beacon.mjs).
+//
+// --- Why the PageView carries an eventID ------------------------------------
+// Moving this call into <head> on 25/08 cut the undercount but did not close
+// it: over the full paid cycle (11/08–11/09, R$1.000) Meta reported 175
+// landing_page_views against the 471 arrivals our own beacon recorded for the
+// same traffic — still 2,69×. What is left is the part no position fixes: ad
+// blockers and ITP refusing connect.facebook.net outright. Only the server
+// can report those arrivals, and POST /api/funnel/events now does
+// (FUNNEL_CAPI_PAGEVIEW_PAGE in main.py).
+//
+// That server report is only safe because of the id below. Meta dedups a
+// browser event against a Conversions API event by (event_name, event_id); a
+// server PageView with an id the browser never used would count the same
+// arrival twice, and the inflated denominator would make every cost-per-
+// arrival in the account look half of what it is. Same contract the Lead event
+// already honours — see enviarPixel in beacon.mjs.
+//
+// randomUUID needs a secure context; production is https, and the fallback
+// keeps a local http test from throwing (it just will not dedup, and outside
+// production nothing is sent anyway).
+window.DI_CONFIG.pageViewEventId =
+  (window.crypto && window.crypto.randomUUID && window.crypto.randomUUID()) ||
+  `pv-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
 if (window.DI_CONFIG.pixelId && window.DI_CONFIG.producao) {
   carregarFbevents();
   window.fbq("init", window.DI_CONFIG.pixelId);
-  window.fbq("track", "PageView");
+  window.fbq("track", "PageView", {}, { eventID: window.DI_CONFIG.pageViewEventId });
 } else if (!window.DI_CONFIG.producao) {
   console.info(
     `pixel: não carregado porque "${window.location.hostname}" está fora de drheliobarros.com.br. É de propósito, para teste local não poluir o pixel.`
