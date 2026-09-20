@@ -37,7 +37,7 @@ window.DI_CONFIG = {
   // A comparação mora em campanha.mjs, com self-check em node.
   campanhaAbre: "2026-10-26T00:00:00-03:00",
   campanhaFecha: "2026-11-16T23:59:59-03:00",
-  offerDelaySeconds: 111.199, // measured on the final cut: start of the SRT cue that
+  offerDelaySeconds: 109.36, // measured on the final cut: start of the SRT cue that
   // names the product ("Ele se chama Doctor Invest Essencial"). The 128 that stood
   // here was a writing-time estimate at 150 words/min; the cloned voice reads at 174,
   // so the name lands 17s earlier. Re-cut the narration and this number moves with it.
