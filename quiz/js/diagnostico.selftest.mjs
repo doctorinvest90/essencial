@@ -4,6 +4,7 @@ import { diagnosticar, OPENS } from "./diagnostico.mjs";
 import { textoResultado } from "./resultado.mjs";
 import { acumular, liberaOferta, DELTA_MAXIMO_SEGUNDOS } from "./acumulador.mjs";
 import { ehProducao, enviarPixel } from "./beacon.mjs";
+import { marcoDoFunil, MARCO_INICIO, MARCO_MEIO } from "./marcos.mjs";
 
 // Every id here is the real option id emitted by index.html (the guard at the
 // bottom of this file proves it). Answers chosen so nothing opens.
@@ -958,6 +959,86 @@ function termoProibidoEncontrado(texto) {
   assert.ok(
     /acumulado\s*=\s*0/.test(ligar[0]) && /video\.currentTime\s*=\s*0/.test(ligar[0]),
     "ligar o som tem que voltar o vídeo ao início E zerar o acumulado: senão a prévia muda compra segundos"
+  );
+}
+
+// --- marcos do meio do quiz -------------------------------------------------
+// Sem eles o funil só sabe quem chegou e quem terminou, e 2,12% de conclusão
+// não distingue "saiu sem responder" de "respondeu e desistiu" — que pedem
+// consertos opostos. O que estes testes prendem é o que erraria em silêncio:
+// um marco que não dispara, um que dispara duas vezes, e a metade virando
+// literal depois do próximo corte de telas.
+{
+  const html = readFileSync(new URL("../../index.html", import.meta.url), "utf8");
+  const perguntas = new Set(Array.from(html.matchAll(/name="(q\d+)"/g)).map((m) => m[1])).size;
+  assert.ok(perguntas > 0, "index.html não tem mais radios de pergunta: o denominador do funil zerou");
+
+  // A primeira resposta é o marco de início, qualquer que seja o tamanho do quiz.
+  assert.equal(marcoDoFunil(1, perguntas), MARCO_INICIO);
+  // A metade sai da contagem real. Com 11 perguntas é a 6ª; se o quiz voltar a
+  // 18, é a 9ª — é esta linha que falha se alguém trocar por um número fixo.
+  assert.equal(marcoDoFunil(Math.ceil(perguntas / 2), perguntas), MARCO_MEIO);
+  assert.equal(marcoDoFunil(9, 18), MARCO_MEIO);
+  assert.equal(marcoDoFunil(6, 18), null, "6 de 18 não é metade: a metade não pode estar fixa em 6");
+  // Zero respostas é a chegada, que `essencial-quiz` já conta no load.
+  assert.equal(marcoDoFunil(0, perguntas), null);
+  // Todo o resto é silêncio: um marco por passo, nunca a cada resposta.
+  for (let n = 2; n <= perguntas; n += 1) {
+    if (n === Math.ceil(perguntas / 2)) continue;
+    assert.equal(marcoDoFunil(n, perguntas), null, `resposta ${n} não é marco e não pode virar beacon`);
+  }
+
+  // Replay de uma sessão com a MESMA mecânica de marcarProgresso() em quiz.js.
+  // O passo que importa é o "Voltar" ESTANDO na metade: trocar uma resposta já
+  // dada não sobe a contagem, então marcoDoFunil devolve MARCO_MEIO de novo e
+  // sem a dedupe o passo apareceria duas vezes para a mesma pessoa. Re-responder
+  // depois da metade é inofensivo e está aqui só para provar isso.
+  {
+    const metade = Math.ceil(perguntas / 2);
+    const respostas = {};
+    const enviados = new Set();
+    const postados = [];
+    const responder = (q) => {
+      respostas[q] = "x";
+      const marco = marcoDoFunil(Object.keys(respostas).length, perguntas);
+      if (!marco || enviados.has(marco)) return;
+      enviados.add(marco);
+      postados.push([marco, Object.keys(respostas).length]);
+    };
+    for (let i = 1; i <= metade; i += 1) responder(`q${i}`);
+    responder("q3"); // Voltar e trocar, parado na metade: a contagem fica em `metade`
+    for (let i = metade + 1; i <= perguntas; i += 1) responder(`q${i}`);
+    responder("q2"); // e de novo, agora já passada a metade
+    assert.deepEqual(
+      postados,
+      [[MARCO_INICIO, 1], [MARCO_MEIO, metade]],
+      "a sessão inteira tem que postar exatamente dois marcos, na 1ª e na metade"
+    );
+  }
+
+  const fonteMarcos = readFileSync(new URL("./quiz.js", import.meta.url), "utf8");
+  // O marco tem que sair da resposta, não do load: o handler de `change` é o
+  // único lugar onde "respondeu" existe.
+  const handlerChange = /document\.addEventListener\("change",[\s\S]*?\n}\);/.exec(fonteMarcos);
+  assert.ok(handlerChange, "quiz.js perdeu o handler de change: nenhuma resposta seria registrada");
+  assert.ok(
+    /marcarProgresso\(\)/.test(handlerChange[0]),
+    "marcarProgresso saiu do handler de change: os marcos parariam de contar quem responde"
+  );
+  assert.ok(
+    /marcosEnviados\.has\(marco\)/.test(fonteMarcos) && /marcosEnviados\.add\(marco\)/.test(fonteMarcos),
+    "sumiu a dedupe dos marcos: trocar uma resposta parado na metade postaria 'meio' outra vez"
+  );
+  // O backend só aceita "view" (EVENTOS_VALIDOS); um evento novo levaria 422 e
+  // o passo sumiria sem erro visível.
+  assert.ok(
+    /enviarBeacon\(marco, "view"\)/.test(fonteMarcos),
+    'os marcos têm que ir como "view": qualquer outro evento é 422 no backend e o passo some calado'
+  );
+  // O denominador vem do DOM, não de um literal no quiz.js.
+  assert.ok(
+    /querySelectorAll\('\.tela input\[type="radio"\]'\)/.test(fonteMarcos),
+    "totalPerguntas deixou de ser contado do DOM: a metade passa a mentir no próximo corte de telas"
   );
 }
 

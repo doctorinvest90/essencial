@@ -11,6 +11,9 @@ import { textoResultado } from "./resultado.mjs";
 // beacon.mjs: one rule, read by both, instead of two copies that can drift out
 // of sync. The rule itself is declared in config.js — see the note there.
 import { ehProducao, enviarBeacon, enviarPixel } from "./beacon.mjs";
+// Which mid-quiz step an answer just reached. Lives in its own module because
+// this file touches the DOM on load and so cannot be imported by the selftest.
+import { marcoDoFunil } from "./marcos.mjs";
 
 const ESPERA_MS = 2500; // "analisando" screen, per copy.md
 const AVANCO_MS = 220; // pause after a tap, so the selection is visible before the screen turns
@@ -22,6 +25,15 @@ const telas = Array.from(document.querySelectorAll(".tela"));
 // the waiting screen and the result are outside the 18.
 const contadas = telas.filter((tela) => tela.dataset.bloco);
 const respostas = {};
+// Counted off the DOM rather than declared here, for the same reason the option
+// ids are not declared in this file: index.html is the single source, and a
+// literal would survive the next screen cut while silently meaning something
+// else. Radios only ever belong to questions — the capture screen uses a
+// checkbox — so this is the question count.
+const totalPerguntas = new Set(
+  Array.from(document.querySelectorAll('.tela input[type="radio"]')).map((campo) => campo.name)
+).size;
+const marcosEnviados = new Set();
 let indice = 0;
 let avancoAgendado = null; // id of the pending auto-advance, so mostrar() can cancel it
 
@@ -100,8 +112,20 @@ document.addEventListener("change", (evento) => {
   const campo = evento.target;
   if (!(campo instanceof HTMLInputElement) || campo.type !== "radio") return;
   respostas[campo.name] = campo.value;
+  marcarProgresso();
   avancoAgendado = window.setTimeout(avancar, AVANCO_MS);
 });
+
+// Posts each mark at most once. Going Back and re-answering an earlier question
+// does not raise the distinct-answer count, but doing it AFTER the halfway
+// point lands on that same number again — without the Set that would post a
+// second "meio" and inflate the very step this exists to measure.
+function marcarProgresso() {
+  const marco = marcoDoFunil(Object.keys(respostas).length, totalPerguntas);
+  if (!marco || marcosEnviados.has(marco)) return;
+  marcosEnviados.add(marco);
+  enviarBeacon(marco, "view");
+}
 
 document.addEventListener("click", (evento) => {
   if (!(evento.target instanceof Element)) return;
