@@ -1040,6 +1040,12 @@ function termoProibidoEncontrado(texto) {
     /querySelectorAll\('\.tela input\[type="radio"\]'\)/.test(fonteMarcos),
     "totalPerguntas deixou de ser contado do DOM: a metade passa a mentir no próximo corte de telas"
   );
+  // O marco da captura sai da navegação, e só casa se o id da tela existir.
+  assert.ok(
+    /proxima\.id === "tela-captura"\) enviarMarco\(MARCO_CAPTURA\)/.test(fonteMarcos) &&
+      /id="tela-captura"/.test(html),
+    "o marco da tela de e-mail sumiu: sem ele não se separa quem desiste em q7–q11 de quem desiste no e-mail"
+  );
 }
 
 console.log("diagnostico.selftest ok");

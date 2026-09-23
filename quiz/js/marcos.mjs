@@ -16,6 +16,10 @@
 // `page` is a free string server-side, so neither needs a backend change.
 export const MARCO_INICIO = "essencial-quiz-start";
 export const MARCO_MEIO = "essencial-quiz-meio";
+// Reached the name/e-mail screen. The halfway mark showed 7 of 7 starters get
+// to the middle and 1 finish (21–23/09, Meta): this splits "gave up on q7–q11"
+// from "gave up at the e-mail gate", which again call for opposite fixes.
+export const MARCO_CAPTURA = "essencial-quiz-captura";
 
 /**
  * The mark, if any, that this answer just reached.

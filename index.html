@@ -30,12 +30,51 @@
 <section class="tela abertura" id="tela-abertura" tabindex="-1">
   <div class="wrap">
     <div class="label">A ordem do atendimento</div>
-    <div class="ordem">A → B → C → D</div>
-    <p class="premissa">Você não opera o joelho antes de estabilizar a via aérea.</p>
     <h1>Em que degrau o seu dinheiro travou?</h1>
-    <p class="sub">11 perguntas. No fim você vê em qual dos quatro degraus está, e qual ficou aberto atrás.</p>
-    <button class="btn" type="button" data-avancar>FAZER O DIAGNÓSTICO</button>
-    <span class="aviso">Leva 2 minutos. Não é recomendação de investimento e nenhum ativo é citado.</span>
+    <p class="premissa">Você não opera o joelho antes de estabilizar a via aérea. Com dinheiro, a ordem é a mesma: quatro degraus, um depois do outro.</p>
+
+    <!-- The mechanism, shown before the first tap: 9 in 10 paid visitors left
+         this screen without answering q1 (beacon, 21/09 on), so the page has to
+         say what the diagnosis looks at before asking for the click. -->
+    <ol class="degraus" aria-label="Os quatro degraus do diagnóstico">
+      <li><b>A</b><span>Via aérea<small>o caixa do mês</small></span></li>
+      <li><b>B</b><span>Ventilação<small>a proteção da renda</small></span></li>
+      <li><b>C</b><span>Circulação<small>o investimento</small></span></li>
+      <li><b>D</b><span>Reavaliação<small>revisão e imposto</small></span></li>
+    </ol>
+
+    <button class="btn btn-largo" type="button" data-avancar>FAZER O DIAGNÓSTICO</button>
+    <p class="selo">Grátis · 11 perguntas · 2 minutos · resultado na hora</p>
+
+    <!-- Real distribution of degrau_real from quiz_essencial.jsonl, tests and
+         junk leads removed: 19 respondents on 23/09/2026. Update by hand as the
+         base grows; never round a real number into a nicer one. -->
+    <figure class="onde">
+      <figcaption><strong>6 em cada 10 travam antes de investir.</strong> Onde os médicos que já fizeram o diagnóstico pararam:</figcaption>
+      <ul class="barras">
+        <li><span class="letra">A</span><span class="trilho"><span class="barra" style="width:58%"></span></span><span class="pct">58%</span></li>
+        <li><span class="letra">B</span><span class="trilho"><span class="barra" style="width:32%"></span></span><span class="pct">32%</span></li>
+        <li><span class="letra">C</span><span class="trilho"><span class="barra" style="width:5%"></span></span><span class="pct">5%</span></li>
+        <li><span class="letra">D</span><span class="trilho"><span class="barra" style="width:5%"></span></span><span class="pct">5%</span></li>
+        <li class="voce"><span class="letra">?</span><span class="trilho"></span><span class="pct">você</span></li>
+      </ul>
+      <p class="base">Base: médicos que fizeram o diagnóstico desde agosto de 2026.</p>
+    </figure>
+
+    <div class="autor">
+      <img src="assets/helio-avatar.jpg" width="64" height="64" alt="Hélio Barros">
+      <div>
+        <strong>Hélio Barros</strong>
+        <p>Médico e gestor de investimentos. É a mesma ordem que eu uso para organizar o dinheiro de médicos.</p>
+      </div>
+    </div>
+    <ul class="credenciais">
+      <li><b>9 anos</b>cuidando do patrimônio de médicos</li>
+      <li><b>CGA</b>ANBIMA desde 2017</li>
+      <li><b>FMUSP</b>residência no HC</li>
+    </ul>
+
+    <span class="aviso">Não é recomendação de investimento e nenhum ativo é citado.</span>
   </div>
 </section>
 

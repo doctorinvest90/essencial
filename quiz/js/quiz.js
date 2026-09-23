@@ -13,7 +13,7 @@ import { textoResultado } from "./resultado.mjs";
 import { ehProducao, enviarBeacon, enviarPixel } from "./beacon.mjs";
 // Which mid-quiz step an answer just reached. Lives in its own module because
 // this file touches the DOM on load and so cannot be imported by the selftest.
-import { marcoDoFunil } from "./marcos.mjs";
+import { marcoDoFunil, MARCO_CAPTURA } from "./marcos.mjs";
 
 const ESPERA_MS = 2500; // "analisando" screen, per copy.md
 const AVANCO_MS = 220; // pause after a tap, so the selection is visible before the screen turns
@@ -70,6 +70,7 @@ function mostrar(alvo) {
   proxima.classList.add("ativa");
   sincronizarAvanco(proxima);
   atualizarProgresso(proxima);
+  if (proxima.id === "tela-captura") enviarMarco(MARCO_CAPTURA);
   window.scrollTo(0, 0);
   proxima.focus({ preventScroll: true });
 }
@@ -121,7 +122,12 @@ document.addEventListener("change", (evento) => {
 // point lands on that same number again — without the Set that would post a
 // second "meio" and inflate the very step this exists to measure.
 function marcarProgresso() {
-  const marco = marcoDoFunil(Object.keys(respostas).length, totalPerguntas);
+  enviarMarco(marcoDoFunil(Object.keys(respostas).length, totalPerguntas));
+}
+
+// Voltar from the capture screen and forward again would otherwise post the
+// capture mark twice; same Set, same rule.
+function enviarMarco(marco) {
   if (!marco || marcosEnviados.has(marco)) return;
   marcosEnviados.add(marco);
   enviarBeacon(marco, "view");

@@ -19,16 +19,25 @@ Fonte de verdade do texto **antes** de virar HTML. Spec: `docs/superpowers/specs
 ## Tela 0 · Abertura (a raiz)
 
 > **A ORDEM DO ATENDIMENTO**
-> **A → B → C → D**
-> *Você não opera o joelho antes de estabilizar a via aérea.*
 >
 > # Em que degrau o seu dinheiro travou?
 >
-> 11 perguntas. No fim você vê em qual dos quatro degraus está, e qual ficou aberto atrás.
+> *Você não opera o joelho antes de estabilizar a via aérea. Com dinheiro, a ordem é a mesma: quatro degraus, um depois do outro.*
+>
+> **A** Via aérea · o caixa do mês — **B** Ventilação · a proteção da renda — **C** Circulação · o investimento — **D** Reavaliação · revisão e imposto
 >
 > **[ FAZER O DIAGNÓSTICO ]**
+> Grátis · 11 perguntas · 2 minutos · resultado na hora
 >
-> Leva 2 minutos. Não é recomendação de investimento e nenhum ativo é citado.
+> **6 em cada 10 travam antes de investir.** Onde os médicos que já fizeram o diagnóstico pararam: A 58% · B 32% · C 5% · D 5% · ? você
+> *Base: médicos que fizeram o diagnóstico desde agosto de 2026.*
+>
+> [foto] **Hélio Barros** — Médico e gestor de investimentos. É a mesma ordem que eu uso para organizar o dinheiro de médicos.
+> **9 anos** cuidando do patrimônio de médicos · **CGA** ANBIMA desde 2017 · **FMUSP** residência no HC
+>
+> Não é recomendação de investimento e nenhum ativo é citado.
+
+Primeira dobra reescrita em 23/09/2026: o marco `essencial-quiz-start` mostrou que ~9 em 10 visitantes pagos saíam desta tela sem responder a q1. Os percentuais do gráfico são o `degrau_real` real de `quiz_essencial.jsonl` (19 respondentes, sem testes e lixo) e se atualizam à mão. **Nunca pôr AUM aqui**: liga a PJ ao patrimônio da Eleva/Mont/Warren (memorando BBL, 17/09).
 
 ---
 
