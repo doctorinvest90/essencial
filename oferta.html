@@ -41,7 +41,10 @@ strong{font-weight:500}
 .qualificador{font-size:15px;letter-spacing:.3px;color:var(--gold);border-left:2px solid var(--gold);padding-left:14px;margin-bottom:22px;max-width:460px}
 .hero h1{font-size:clamp(38px,5.4vw,60px)}
 .hero p.sub{font-size:18.5px;margin:20px 0 30px;opacity:.92;max-width:540px}
-.hero-foto{width:100%;max-width:330px;border-radius:10px;justify-self:center;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.hero-fig{margin:0;width:100%;max-width:330px;justify-self:center}
+.hero-foto{display:block;width:100%;border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.hero-fig figcaption{font-size:13.5px;line-height:1.5;opacity:.8;margin-top:14px}
+.hero-fig figcaption strong{display:block;color:var(--gold);font-weight:500;letter-spacing:.3px}
 .fatos{display:flex;flex-wrap:wrap;gap:0;border:1px solid rgba(201,168,76,.35);border-radius:8px;margin-bottom:28px;max-width:540px}
 .fatos div{flex:1 1 33%;padding:14px 18px;border-right:1px solid rgba(201,168,76,.22)}
 .fatos div:last-child{border-right:0}
@@ -116,6 +119,8 @@ section.gradiente{background:linear-gradient(160deg,#152538,var(--navy));color:v
 .caixa-preco{background:rgba(247,245,240,.05);border:1px solid rgba(201,168,76,.3);border-radius:12px;padding:40px;text-align:center;max-width:640px;margin:0 auto}
 .valor{font-family:'Cormorant Garamond',serif;font-size:clamp(48px,10vw,64px);font-weight:600;color:var(--gold);line-height:1}
 .valor span{display:block;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:300;opacity:.7;margin-top:6px;letter-spacing:1px}
+.parcela{font-size:16px;opacity:.85;margin-top:14px}
+.parcela span{display:block;font-size:13px;opacity:.75;margin-top:2px}
 .sem-desconto{font-size:15.5px;opacity:.85;margin:18px 0 30px}
 .garantias{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:34px;text-align:left}
 .gar{border-top:1px solid rgba(201,168,76,.35);padding-top:14px;font-size:14.5px;opacity:.9}
@@ -149,7 +154,7 @@ section.gradiente{background:linear-gradient(160deg,#152538,var(--navy));color:v
 
 @media (max-width:900px){
   .hero-grid{grid-template-columns:1fr;gap:30px}
-  .hero-foto{max-width:280px;justify-self:start}
+  .hero-fig{max-width:280px;justify-self:start}
   .grid3{grid-template-columns:1fr}
   .recortes{grid-template-columns:repeat(2,1fr)}
   .marcos{grid-template-columns:repeat(2,1fr)}
@@ -203,7 +208,12 @@ section.gradiente{background:linear-gradient(160deg,#152538,var(--navy));color:v
           <li>Cada plano revisado por mim, com o seu nome nele.</li>
         </ul>
       </div>
-      <img class="hero-foto" src="/assets/helio-terno.jpg" alt="Hélio Barros">
+      <!-- Sem cliente e sem depoimento para mostrar, a credencial é a prova social
+           que existe. Ela ficava só na resposta fechada do FAQ. -->
+      <figure class="hero-fig">
+        <img class="hero-foto" src="/assets/helio-terno.jpg" alt="Hélio Barros">
+        <figcaption><strong>Hélio Barros</strong>Médico pela FMUSP, residência no HC · CGA ANBIMA desde 2017 · 9 anos cuidando do patrimônio de médicos</figcaption>
+      </figure>
     </div>
   </div>
 </section>
@@ -383,6 +393,11 @@ section.gradiente{background:linear-gradient(160deg,#152538,var(--navy));color:v
     <div class="caixa-preco">
       <div class="label">Doctor Invest Essencial</div>
       <div class="valor" style="margin-top:14px">R$ 997<span>por ano</span></div>
+      <!-- Lido do checkout Z0B1BKE69A em 30/09/2026 (installmentFee 3,49% a.m.,
+           12x de R$ 103,11). O total a prazo vai junto porque oferta parcelada
+           com juros tem que dizer o total (CDC art. 52). Se a Eduzz mudar a taxa,
+           este número fica errado: reconferir antes de 26/10. -->
+      <p class="parcela">ou 12x de R$ 103,11 no cartão<span>total a prazo R$ 1.237,32, com os juros da Eduzz</span></p>
       <p class="sem-desconto">Sem desconto, em nenhum momento desta campanha. O preço no dia 16 é o mesmo do primeiro dia.</p>
 
       <div class="quando-aberta">
@@ -469,7 +484,7 @@ section.gradiente{background:linear-gradient(160deg,#152538,var(--navy));color:v
     </details>
     <details>
       <summary>Quem é você?</summary>
-      <p>Hélio Barros, médico e gestor de investimentos. À frente da Doctor Invest, eu cuido do patrimônio de médicos e famílias, e criei o Essencial para entregar a quem está começando o mesmo método que aplico nas carteiras maiores.</p>
+      <p>Hélio Barros, médico formado pela FMUSP, com residência no Hospital das Clínicas, e gestor de investimentos certificado CGA pela ANBIMA desde 2017. Há 9 anos à frente da Doctor Invest, eu cuido do patrimônio de médicos e famílias, e criei o Essencial para entregar a quem está começando o mesmo método que aplico nas carteiras maiores.</p>
       <p>Aqui não tem robô decidindo a sua vida financeira nem consultor júnior com script. <strong>Cada plano passa pela minha revisão, pessoalmente</strong>, e é exatamente isso que limita a turma a 20.</p>
     </details>
   </div>

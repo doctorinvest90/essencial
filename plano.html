@@ -71,12 +71,17 @@ h1,h2,h3{font-family:'Cormorant Garamond',serif;font-weight:600;line-height:1.15
 .quem img{width:100%;border-radius:10px;box-shadow:0 16px 40px rgba(13,27,42,.25)}
 .quem h2{font-size:clamp(28px,3.6vw,40px);margin-bottom:16px}
 .quem p{margin-bottom:12px}
+.credenciais{list-style:none;display:flex;flex-wrap:wrap;gap:14px 28px;margin:22px 0 18px}
+.credenciais li{flex:1 1 140px;max-width:190px;border-top:2px solid var(--gold);padding-top:10px;font-size:14px;line-height:1.4;opacity:.85}
+.credenciais b{display:block;font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;line-height:1.1}
 /* preço */
 .preco{background:var(--navy);color:var(--ivory);padding:90px 0;text-align:center}
 .preco-card{max-width:520px;margin:0 auto;background:rgba(247,245,240,.04);border:1px solid rgba(201,168,76,.4);border-radius:14px;padding:48px 40px}
 .preco h2{font-size:clamp(30px,4vw,44px);margin:14px 0 6px}
 .preco .valor{font-family:'Cormorant Garamond',serif;font-size:64px;font-weight:600;margin:18px 0 2px}
 .preco .parcelas{font-size:19px;opacity:.9;margin-bottom:26px}
+.preco .parcelas .cartao{display:block;font-size:15px;opacity:.85;margin-top:8px}
+.preco .parcelas .cartao small{display:block;font-size:13px;opacity:.75;margin-top:2px}
 .preco ul{list-style:none;text-align:left;margin:26px 0 34px;font-size:15.5px}
 .preco li{padding:7px 0 7px 30px;position:relative}
 .preco li:before{content:"—";position:absolute;left:0;color:var(--gold)}
@@ -188,6 +193,12 @@ h1,h2,h3{font-family:'Cormorant Garamond',serif;font-weight:600;line-height:1.15
         <h2>Hélio Barros</h2>
         <p>Médico e gestor de investimentos. À frente da <strong>Doctor Invest</strong>, cuida do patrimônio de médicos e famílias — e criou o Essencial pra entregar a quem está começando o mesmo método que aplica na gestão de carteiras maiores.</p>
         <p>Aqui não tem robô decidindo sua vida financeira nem consultor júnior com script: <strong>cada plano passa pela minha revisão, pessoalmente</strong>.</p>
+        <!-- As mesmas três do começo do quiz: quem chega do diagnóstico reconhece. -->
+        <ul class="credenciais">
+          <li><b>9 anos</b>cuidando do patrimônio de médicos</li>
+          <li><b>CGA</b>ANBIMA desde 2017</li>
+          <li><b>FMUSP</b>residência no HC</li>
+        </ul>
         <p style="opacity:.7;font-size:15px">@drheliobarros</p>
       </div>
     </div>
@@ -199,7 +210,9 @@ h1,h2,h3{font-family:'Cormorant Garamond',serif;font-weight:600;line-height:1.15
     <div class="preco-card">
       <h2>Doctor Invest Essencial</h2>
       <div class="valor gold">R$ 997</div>
-      <div class="parcelas">por ano · assinatura renovada a cada 12 meses</div>
+      <!-- Lido do checkout Z0B1BKE69A em 30/09/2026 (installmentFee 3,49% a.m.).
+           Total a prazo junto por causa do CDC art. 52. Reconferir antes de 26/10. -->
+      <div class="parcelas">por ano · assinatura renovada a cada 12 meses<span class="cartao">ou 12x de R$ 103,11 no cartão<small>total a prazo R$ 1.237,32, com os juros da Eduzz</small></span></div>
       <ul>
         <li>Diagnóstico + plano individualizado revisado pessoalmente</li>
         <li>Carteira de ETFs pro seu perfil</li>
