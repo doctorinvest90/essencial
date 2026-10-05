@@ -76,28 +76,34 @@ function tituloPorGap(diag) {
   }
 }
 
-/** @param {Diag} diag */
-function ctaPor(diag) {
+/**
+ * @param {Diag} diag
+ * @param {string} search the quiz page's own query string ("?utm_source=..."),
+ *   carried to /vsl so the beacon there still knows which channel brought the
+ *   lead. Without it attribution dies at the quiz -> VSL hop.
+ */
+function ctaPor(diag, search) {
   // Over R$500k is a consultoria candidate, not the R$997/year product
   // (spec D10). Applies even when the diagnosis is in order.
   if (diag.faixa === "acima500") {
     return { label: "Falar sobre a consultoria", href: WHATSAPP_CONSULTORIA_HREF };
   }
-  return { label: "Ver o que fazer com isso", href: "/vsl" };
+  return { label: "Ver o que fazer com isso", href: `/vsl${search}` };
 }
 
 /**
  * @param {Diag} diag
+ * @param {string} [search] location.search of the quiz page, forwarded to /vsl
  * @returns {{ titulo: string, abertos: string[], porque: string,
  *             primeiroPasso: string, cta: { label: string, href: string } }}
  */
-export function textoResultado(diag) {
+export function textoResultado(diag, search = "") {
   const template = diag.real === null ? EM_ORDEM : DEGRAUS[diag.real];
   return {
     titulo: tituloPorGap(diag),
     abertos: diag.motivos,
     porque: template.porque,
     primeiroPasso: template.primeiroPasso,
-    cta: ctaPor(diag),
+    cta: ctaPor(diag, search),
   };
 }

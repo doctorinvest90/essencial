@@ -264,7 +264,7 @@ function enviarLead(diag, eventId) {
 }
 
 function renderResultado(diag) {
-  const texto = textoResultado(diag);
+  const texto = textoResultado(diag, window.location.search);
   document.getElementById("res-titulo").textContent = texto.titulo;
 
   const lista = document.getElementById("res-abertos");

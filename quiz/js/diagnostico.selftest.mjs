@@ -74,6 +74,15 @@ const ok = { q1: "sei_numero", q2: "mais6", q3: "nenhuma", q4: "seguro_sei_quant
   }
 }
 
+// textoResultado: a UTM do quiz chega na /vsl (antes morria no salto)
+{
+  const diag = { real: "A", energia: "A", abertos: ["A"], motivos: [], gap: "igual", faixa: "ate100" };
+  assert.equal(textoResultado(diag, "?utm_source=crm-b").cta.href, "/vsl?utm_source=crm-b");
+  assert.equal(textoResultado(diag).cta.href, "/vsl");
+  const acima = { ...diag, faixa: "acima500" };
+  assert.ok(!textoResultado(acima, "?utm_source=x").cta.href.includes("utm_source"));
+}
+
 // textoResultado: o caso em ordem (real === null) também produz título não vazio
 {
   const diag = diagnosticar(ok);
