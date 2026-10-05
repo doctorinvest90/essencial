@@ -48,3 +48,32 @@ export function acumular(acumulado, ultimoTempo, tempoAtual) {
 export function liberaOferta(acumulado, limiar) {
   return typeof limiar === "number" && Number.isFinite(limiar) && acumulado >= limiar;
 }
+
+// --- Drop-off marks on /vsl ------------------------------------------------
+// The marks used to read the playhead (currentTime / duration). Measured on
+// 05/10/2026, that let a scrub count as watching: twice a visitor dragged the
+// bar and 25/50/75 all fired 8–12 s after the page opened. They now read the
+// same accumulated time that gates the offer, so a scrub moves nothing.
+export const MARCOS_VSL = [25, 50, 75];
+
+// `ended` alone also fires on a scrub to the end. Finishing means having
+// actually watched almost all of it; the 5% slack absorbs the tick lost after
+// every pause (acumular has no baseline then) and a short buffering skip.
+export const FRACAO_TERMINOU = 0.95;
+
+/**
+ * Marks (percent of the cut) covered by the time actually watched.
+ *
+ * @param {number} acumulado seconds watched, scrubs excluded
+ * @param {number} duracao video.duration; NaN/Infinity before metadata loads
+ * @returns {number[]} subset of MARCOS_VSL, ascending
+ */
+export function marcosAssistidos(acumulado, duracao) {
+  if (!(duracao > 0) || !Number.isFinite(duracao)) return [];
+  return MARCOS_VSL.filter((m) => acumulado >= (duracao * m) / 100);
+}
+
+/** Whether an `ended` counts as a finished view, not a scrub to the end. */
+export function terminou(acumulado, duracao) {
+  return duracao > 0 && Number.isFinite(duracao) && acumulado >= duracao * FRACAO_TERMINOU;
+}

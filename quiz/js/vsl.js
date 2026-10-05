@@ -5,7 +5,7 @@
 // it; the script tag still sits at the end of body after config.js, so
 // timing is unchanged.
 import { enviarBeacon } from "./beacon.mjs";
-import { acumular, liberaOferta } from "./acumulador.mjs";
+import { acumular, liberaOferta, marcosAssistidos, terminou } from "./acumulador.mjs";
 import { lerDegrauDoQuiz, comDegrau } from "./checkout.mjs";
 import { estadoAgora, ABERTA } from "./campanha.mjs";
 
@@ -107,16 +107,13 @@ video.addEventListener("timeupdate", () => {
 // Until now this page reported two bits: "opened" and "reached 111s". When 3
 // of 4 visitors fall in between, that is not enough to know whether the video
 // loses them at the hook, at the middle, or one beat short of the offer. These
-// fire once each, on playhead position (not accumulated time), because what we
-// want to read is WHERE in the cut people leave.
-const MARCOS = [25, 50, 75];
+// fire once each, on accumulated watched time (see acumulador.mjs for why not
+// the playhead: a scrub used to fire all three at once).
 const marcosEnviados = new Set();
 
 function marcarProgresso() {
-  if (!video.duration || !Number.isFinite(video.duration)) return;
-  const pct = (video.currentTime / video.duration) * 100;
-  for (const marco of MARCOS) {
-    if (pct >= marco && !marcosEnviados.has(marco)) {
+  for (const marco of marcosAssistidos(acumulado, video.duration)) {
+    if (!marcosEnviados.has(marco)) {
       marcosEnviados.add(marco);
       enviarBeacon(`essencial-vsl-${marco}`, "view");
     }
@@ -134,6 +131,13 @@ video.addEventListener("ended", () => {
   // a coarse last timeupdate skipped, so the drop-off curve has no phantom
   // hole at 75% for people who actually finished.
   marcarProgresso();
+  // Until 05/10/2026 there was no 100 at all, so "nobody finished" was zero by
+  // construction. A scrub to the end still reveals the offer below, but does
+  // not count as finishing.
+  if (terminou(acumulado, video.duration) && !marcosEnviados.has(100)) {
+    marcosEnviados.add(100);
+    enviarBeacon("essencial-vsl-100", "view");
+  }
   revelarOferta();
 });
 
@@ -147,8 +151,18 @@ video.addEventListener("ended", () => {
 // was watched, but not heard, and the offer is supposed to be born on the
 // sentence that names the product -- counting silent seconds towards it would
 // open the box before the visitor ever heard why.
+// The page opens muted, so "left at 30s" alone cannot tell "never heard the
+// hook" from "heard it and left" -- opposite fixes. This beacon splits them.
+let somAvisado = false;
+function avisarSom() {
+  if (somAvisado) return;
+  somAvisado = true;
+  enviarBeacon("essencial-vsl-som", "view");
+}
+
 function ligarSom() {
   if (botaoSom.hidden) return;
+  avisarSom();
   botaoSom.hidden = true;
   video.muted = false;
   video.currentTime = 0;
@@ -164,6 +178,7 @@ botaoSom.addEventListener("click", ligarSom);
 // on screen. Hide it, but do not rewind or reset: the visitor chose to carry
 // on from where they were, and yanking them back to zero would be rude.
 video.addEventListener("volumechange", () => {
+  if (!video.muted) avisarSom();
   if (!video.muted && !botaoSom.hidden) botaoSom.hidden = true;
 });
 
@@ -177,6 +192,9 @@ video.addEventListener("seeking", () => { ultimoTempo = video.currentTime; });
 // dead player with no path forward. Hide the broken element, say so, and let
 // the offer stand on its own since there is nothing left to gate it on.
 video.addEventListener("error", () => {
+  // Without this the failure only showed up as an offer with no mark before
+  // it, indistinguishable from a scrub (one such offer on 23/09/2026).
+  enviarBeacon("essencial-vsl-erro", "view");
   video.hidden = true;
   botaoSom.hidden = true; // otherwise it sits on top of the message below
   avisoVideo.hidden = false;

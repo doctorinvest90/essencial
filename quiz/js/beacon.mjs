@@ -32,6 +32,69 @@ export function ehProducao() {
   return (window.DI_CONFIG || {}).producao === true;
 }
 
+// --- Session and test marks -------------------------------------------------
+// Until 05/10/2026 every beacon was an island: a reload counted as a second
+// visitor, quiz-done could not be joined to the /vsl that followed, and the
+// owner's own checks (the deploy-day `?offer=` runs, the 23/09 burst) sat in
+// the same denominator as real leads.
+//
+// `sid` is a random id per browser TAB (sessionStorage dies with the tab). It
+// never goes with the lead POST, so the funnel file stays free of personal data
+// (CLAUDE.md §4.4); the backend also drops anything that is not this shape.
+export const CHAVE_SESSAO = "di_sid";
+export const CHAVE_TESTE = "di_teste";
+
+// randomUUID is missing on Safari < 15.4; the fallback is the same 128 bits as hex.
+function idAleatorio() {
+  if (crypto.randomUUID) return crypto.randomUUID();
+  return Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) =>
+    b.toString(16).padStart(2, "0")
+  ).join("");
+}
+
+// Reading window.sessionStorage itself throws when the browser blocks storage,
+// and that throw would sink the whole beacon, not just the id.
+function armazem(nome) {
+  try {
+    return window[nome];
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The tab's session id, created on first use. Null when storage is blocked
+ * (private mode on some browsers): the beacon still goes, just unjoinable.
+ */
+export function sessao(storage, gerar = idAleatorio) {
+  try {
+    let sid = storage.getItem(CHAVE_SESSAO);
+    if (!sid) {
+      sid = gerar();
+      storage.setItem(CHAVE_SESSAO, sid);
+    }
+    return sid;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Whether this visit is the owner testing. `?teste=1` marks the browser for
+ * good (localStorage), `?teste=0` clears it; the offer/strip overrides only
+ * exist for manual checks, so they mark the visit on their own.
+ */
+export function ehTeste(params, storage) {
+  try {
+    if (params.get("teste") === "1") storage.setItem(CHAVE_TESTE, "1");
+    if (params.get("teste") === "0") storage.removeItem(CHAVE_TESTE);
+    if (storage.getItem(CHAVE_TESTE) === "1") return true;
+  } catch {
+    // storage blocked: fall through to the URL-only rule
+  }
+  return params.has("offer") || params.has("preco");
+}
+
 export function enviarBeacon(page, event) {
   const cfg = window.DI_CONFIG || {};
   if (!cfg.beaconUrl) return;
@@ -56,7 +119,9 @@ export function enviarBeacon(page, event) {
       // the checkout links carry the quiz degrau in it. Passing it through is
       // what turns the funnel counts into conversion per degrau.
       utm_content: params.get("utm_content"),
+      sid: sessao(armazem("sessionStorage")),
     };
+    if (ehTeste(params, armazem("localStorage"))) corpo.teste = true;
     // --- arrival reported server-side too ------------------------------------
     // Only on "view", and only these two fields, which the backend uses to
     // build the Meta PageView and then DROPS — they are never written to

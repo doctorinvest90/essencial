@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { diagnosticar, OPENS } from "./diagnostico.mjs";
 import { textoResultado } from "./resultado.mjs";
-import { acumular, liberaOferta, DELTA_MAXIMO_SEGUNDOS } from "./acumulador.mjs";
-import { ehProducao, enviarPixel } from "./beacon.mjs";
+import { acumular, liberaOferta, DELTA_MAXIMO_SEGUNDOS, marcosAssistidos, terminou, MARCOS_VSL } from "./acumulador.mjs";
+import { ehProducao, enviarPixel, sessao, ehTeste, CHAVE_SESSAO, CHAVE_TESTE } from "./beacon.mjs";
 import { marcoDoFunil, MARCO_INICIO, MARCO_MEIO } from "./marcos.mjs";
 
 // Every id here is the real option id emitted by index.html (the guard at the
@@ -681,14 +681,17 @@ function termoProibidoEncontrado(texto) {
     "essencial-vsl": "view",
     "essencial-vsl-preco": "view",
     "essencial-vsl-offer": "view",
+    "essencial-vsl-100": "view",
+    "essencial-vsl-som": "view",
+    "essencial-vsl-erro": "view",
     "essencial-plano": "view",
     essencial: "checkout_click",
   };
   const EVENTOS_VALIDOS_BACKEND = new Set(["view", "checkout_click"]);
   // Not in the table above: the drop-off marks (essencial-vsl-25/50/75), whose
   // page name is built from a template literal in vsl.js and so is invisible to
-  // the literal-pair regex below. They are covered further down, where MARCOS
-  // is read straight out of the source. Backend-wise they are safe by
+  // the literal-pair regex below. They are covered further down, through
+  // MARCOS_VSL in acumulador.mjs. Backend-wise they are safe by
   // construction: FunnelEventIn only validates `event` (page is a free `str`),
   // and they all send "view".
 
@@ -708,8 +711,8 @@ function termoProibidoEncontrado(texto) {
 
   assert.equal(
     chamadas.length,
-    8,
-    `esperava 8 chamadas a enviarBeacon no total (quiz.js + vsl.js + plano.html), achou ${chamadas.length}`
+    11,
+    `esperava 11 chamadas a enviarBeacon no total (quiz.js + vsl.js + plano.html), achou ${chamadas.length}`
   );
 
   const pagesVistas = new Set();
@@ -909,10 +912,14 @@ function termoProibidoEncontrado(texto) {
   );
   for (const marco of [25, 50, 75]) {
     assert.ok(
-      new RegExp(`\\b${marco}\\b`).test(/const MARCOS = \[([^\]]*)\]/.exec(fonteVsl)?.[1] ?? ""),
-      `vsl.js perdeu o marco de ${marco}% do vídeo: sem ele a curva de abandono fica cega nesse trecho`
+      MARCOS_VSL.includes(marco),
+      `acumulador.mjs perdeu o marco de ${marco}% do vídeo: sem ele a curva de abandono fica cega nesse trecho`
     );
   }
+  assert.ok(
+    /marcosAssistidos\(acumulado,\s*video\.duration\)/.test(fonteVsl),
+    "vsl.js voltou a marcar pela posição da barra: arrastar até o fim volta a contar como assistir"
+  );
 
   // The video starts on its own, muted, and the overlay is what turns sound on.
   // Three things have to stay true together or the page breaks in ways that look
@@ -1046,6 +1053,57 @@ function termoProibidoEncontrado(texto) {
       /id="tela-captura"/.test(html),
     "o marco da tela de e-mail sumiu: sem ele não se separa quem desiste em q7–q11 de quem desiste no e-mail"
   );
+}
+
+// Marcos da /vsl por tempo assistido (05/10/2026): arrastar a barra disparava
+// 25/50/75 juntos e não existia 100, então "ninguém terminou" era zero por construção.
+{
+  const dur = 156.8;
+  assert.deepEqual(marcosAssistidos(0, dur), []);
+  assert.deepEqual(marcosAssistidos(39.2, dur), [25]);
+  assert.deepEqual(marcosAssistidos(120, dur), [25, 50, 75]);
+  assert.deepEqual(marcosAssistidos(50, NaN), [], "sem metadata não há marco");
+  assert.deepEqual(marcosAssistidos(50, Infinity), []);
+  // O caso medido: abriu, arrastou até o fim. O acumulado não anda num salto,
+  // então nem marco nem 100 — a oferta abre pelo `ended`, mas isso não é assistir.
+  let acc = 0;
+  let ultimo = null;
+  for (const t of [0, 0.25, 0.5, 0.75, 156.8]) { acc = acumular(acc, ultimo, t); ultimo = t; }
+  assert.deepEqual(marcosAssistidos(acc, dur), [], "scrub virou marco");
+  assert.equal(terminou(acc, dur), false, "scrub até o fim contou como terminou");
+  // Assistiu inteiro, com pausas: termina mesmo perdendo um tick por pausa.
+  assert.equal(terminou(dur - 3, dur), true);
+  assert.equal(terminou(dur * 0.9, dur), false, "pular 10% não é terminar");
+  assert.equal(terminou(dur, NaN), false);
+}
+
+// sid e marca de teste do beacon
+{
+  const loja = () => {
+    const m = new Map();
+    return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k), m };
+  };
+  const s = loja();
+  const a = sessao(s, () => "id-1");
+  assert.equal(a, "id-1");
+  assert.equal(sessao(s, () => "id-2"), "id-1", "a mesma aba tem que manter o mesmo sid");
+  assert.equal(s.m.get(CHAVE_SESSAO), "id-1");
+  assert.equal(sessao(null), null, "storage bloqueado não pode derrubar o beacon");
+  const quebrada = { getItem() { throw new Error("SecurityError"); } };
+  assert.equal(sessao(quebrada), null);
+  // gerador padrão: 128 bits, formato aceito pelo backend
+  assert.match(sessao(loja()), /^[0-9a-f-]{32,36}$/);
+
+  const p = (q) => new URLSearchParams(q);
+  const t = loja();
+  assert.equal(ehTeste(p(""), t), false);
+  assert.equal(ehTeste(p("?teste=1"), t), true);
+  assert.equal(ehTeste(p(""), t), true, "?teste=1 tem que valer nas visitas seguintes");
+  assert.equal(ehTeste(p("?teste=0"), t), false);
+  assert.equal(ehTeste(p(""), t), false);
+  assert.equal(ehTeste(p("?offer=10"), loja()), true, "override de oferta só existe em teste");
+  assert.equal(ehTeste(p("?preco=5"), null), true);
+  assert.equal(ehTeste(p(""), null), false);
 }
 
 console.log("diagnostico.selftest ok");
