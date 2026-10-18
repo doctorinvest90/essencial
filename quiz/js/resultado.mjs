@@ -5,9 +5,15 @@
 // §4 "O resultado" (screen layout) and §3 D5 (the four titles by gap case).
 
 /** @typedef {"A"|"B"|"C"|"D"} Degrau */
-/** @typedef {{ real: Degrau|null, energia: Degrau, abertos: Degrau[], motivos: string[], gap: "acima"|"igual"|"abaixo"|"emordem", faixa: "ate100"|"100a300"|"300a500"|"acima500" }} Diag */
+/** @typedef {{ real: Degrau|null, energia: Degrau, abertos: Degrau[], motivos: string[], gap: "acima"|"igual"|"abaixo"|"emordem", faixa: "ate100"|"100a300"|"300a500"|"acima500"|"2a5m"|"acima5m" }} Diag */
 
-// WhatsApp CTA for faixa "acima500" (over R$500k in assets: a consultoria
+// The faixas from R$500k up. "acima500" kept its value when the quiz split it at
+// R$2M and R$5M (process review 17/10/2026, dec. 36): every reader of the
+// jsonl and beehiiv still means ">= R$500k" by it, and 2a5m/acima5m are Funil B.
+export const FAIXAS_CONSULTORIA = new Set(["acima500", "2a5m", "acima5m"]);
+export const ehFaixaConsultoria = (faixa) => FAIXAS_CONSULTORIA.has(faixa);
+
+// WhatsApp CTA for the faixas from R$500k up (a consultoria
 // candidate, not the R$997/year product, spec D10). Message text lives in
 // its own named constant so it's easy to swap without touching the rest of
 // the file.
@@ -85,7 +91,7 @@ function tituloPorGap(diag) {
 function ctaPor(diag, search) {
   // Over R$500k is a consultoria candidate, not the R$997/year product
   // (spec D10). Applies even when the diagnosis is in order.
-  if (diag.faixa === "acima500") {
+  if (ehFaixaConsultoria(diag.faixa)) {
     return { label: "Falar sobre a consultoria", href: WHATSAPP_CONSULTORIA_HREF };
   }
   return { label: "Ver o que fazer com isso", href: `/vsl${search}` };

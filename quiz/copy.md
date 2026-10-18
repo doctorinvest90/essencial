@@ -305,9 +305,11 @@ de fonte entre a Tela 4 e a Tela 10, que hoje citam o mesmo estudo.
 | `ate100` | Até R$ 100 mil |
 | `100a300` | R$ 100 a 300 mil |
 | `300a500` | R$ 300 a 500 mil |
-| `acima500` | Acima de R$ 500 mil |
+| `acima500` | R$ 500 mil a 2 milhões |
+| `2a5m` | R$ 2 a 5 milhões |
+| `acima5m` | Acima de R$ 5 milhões |
 
-→ `acima500` troca o CTA do resultado (spec D10). O diagnóstico sai igual.
+→ `acima500`, `2a5m` e `acima5m` trocam o CTA do resultado (spec D10). O diagnóstico sai igual. As duas faixas de cima entraram em 17/10/2026 (revisão de processos, dec. 36) para identificar o lead do Funil B; `acima500` manteve o valor, e quem lê o jsonl continua lendo ">= R$ 500 mil" nela.
 
 ---
 
@@ -437,4 +439,4 @@ Este diagnóstico é educativo e não constitui recomendação de investimento.
 | faixa | rótulo | destino |
 |---|---|---|
 | até R$ 500 mil | Ver o que fazer com isso | `/vsl` |
-| acima de R$ 500 mil | Falar sobre a consultoria | WhatsApp da consultoria |
+| R$ 500 mil ou mais (três faixas) | Falar sobre a consultoria | WhatsApp da consultoria |

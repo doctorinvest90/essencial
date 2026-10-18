@@ -45,7 +45,7 @@ function compararGap(energia, real) {
  * @param {Record<string, string>} respostas - answers keyed by question id (q1..q13). Missing keys are fine and never count as open.
  * @returns {{ real: Degrau|null, energia: Degrau, abertos: Degrau[],
  *             motivos: string[], gap: "acima"|"igual"|"abaixo"|"emordem",
- *             faixa: "ate100"|"100a300"|"300a500"|"acima500" }}
+ *             faixa: "ate100"|"100a300"|"300a500"|"acima500"|"2a5m"|"acima5m" }}
  */
 export function diagnosticar(respostas = {}) {
   const abertosSet = new Set();
@@ -63,7 +63,7 @@ export function diagnosticar(respostas = {}) {
   const abertos = ORDEM.filter((degrau) => abertosSet.has(degrau));
   const real = abertos[0] ?? null;
   // Q10 and Q11 answer directly with the value we need (energia is already
-  // "A"|"B"|"C"|"D"; faixa is already "ate100"|"100a300"|"300a500"|"acima500"),
+  // "A"|"B"|"C"|"D"; faixa is already "ate100"|"100a300"|"300a500"|"acima500"|"2a5m"|"acima5m"),
   // so no lookup table is required. Defaults only matter if the quiz UI lets
   // the flow reach the result without them, which it shouldn't; fall back to
   // the most conservative reading (earliest degrau / smallest faixa).

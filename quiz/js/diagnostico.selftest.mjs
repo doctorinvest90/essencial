@@ -100,9 +100,9 @@ const ok = { q1: "sei_numero", q2: "mais6", q3: "nenhuma", q4: "seguro_sei_quant
     { ...ok, q8: "nunca", q10: "A" }, // abaixo
   ];
   const gapsVistos = new Set();
-  for (const base of casosPorGap) {
-    const diag = diagnosticar({ ...base, q11: "acima500" });
-    assert.equal(diag.faixa, "acima500");
+  for (const base of casosPorGap) for (const faixa of ["acima500", "2a5m", "acima5m"]) {
+    const diag = diagnosticar({ ...base, q11: faixa });
+    assert.equal(diag.faixa, faixa);
     gapsVistos.add(diag.gap);
     const texto = textoResultado(diag);
     assert.equal(texto.cta.label, "Falar sobre a consultoria");
@@ -320,7 +320,7 @@ function termoProibidoEncontrado(texto) {
   assert.deepEqual(new Set(opcoesPorPergunta.q10), new Set(["A", "B", "C", "D"]));
   assert.deepEqual(
     new Set(opcoesPorPergunta.q11),
-    new Set(["ate100", "100a300", "300a500", "acima500"])
+    new Set(["ate100", "100a300", "300a500", "acima500", "2a5m", "acima5m"])
   );
 
   for (const energia of opcoesPorPergunta.q10) {
@@ -333,7 +333,7 @@ function termoProibidoEncontrado(texto) {
   const trocamOCta = opcoesPorPergunta.q11.filter((faixa) =>
     textoResultado(diagnosticar({ ...ok, q11: faixa })).cta.href.includes("wa.me")
   );
-  assert.deepEqual(trocamOCta, ["acima500"], "só a faixa acima500 pode virar o CTA de consultoria");
+  assert.deepEqual(trocamOCta, ["acima500", "2a5m", "acima5m"], "só as faixas de R$ 500 mil para cima viram o CTA de consultoria");
 
   // The top-exit line does not exist in resultado.mjs: the screen owns it. If
   // it disappears from the HTML, the consultoria button loses its explanation.

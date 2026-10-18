@@ -6,7 +6,7 @@
 // in index.html, which copy the OPENS table of diagnostico.mjs. Two copies of
 // the same id list would be a third place to drift.
 import { diagnosticar } from "./diagnostico.mjs";
-import { textoResultado } from "./resultado.mjs";
+import { textoResultado, ehFaixaConsultoria } from "./resultado.mjs";
 // ehProducao() guards both the lead POST below and the funnel beacon in
 // beacon.mjs: one rule, read by both, instead of two copies that can drift out
 // of sync. The rule itself is declared in config.js — see the note there.
@@ -281,7 +281,7 @@ function renderResultado(diag) {
   // resultado.mjs returns only label and href for the CTA, so the line that
   // explains the consultoria exit lives in index.html and the page decides when
   // to show it.
-  document.getElementById("res-saida-de-cima").hidden = diag.faixa !== "acima500";
+  document.getElementById("res-saida-de-cima").hidden = !ehFaixaConsultoria(diag.faixa);
 
   const cta = document.getElementById("res-cta");
   cta.textContent = `${texto.cta.label} →`;
