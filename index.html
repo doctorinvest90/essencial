@@ -27,7 +27,7 @@
 <main>
 
 <!-- Tela 0 · Abertura -->
-<section class="tela abertura" id="tela-abertura" tabindex="-1">
+<section class="tela abertura" id="tela-abertura" data-bloco="A · Via aérea" tabindex="-1">
   <div class="wrap">
     <div class="label">A ordem do atendimento</div>
     <h1>Em que degrau o seu dinheiro travou?</h1>
@@ -43,8 +43,20 @@
       <li><b>D</b><span>Reavaliação<small>revisão e imposto</small></span></li>
     </ol>
 
-    <button class="btn btn-largo" type="button" data-avancar>FAZER O DIAGNÓSTICO</button>
-    <p class="selo">Grátis · 11 perguntas · 2 minutos · resultado na hora</p>
+    <!-- q1 lives on the cover. The explanation above did not move the first
+         answer: from 05/10 to 21/10, 16 of 297 arrivals answered q1 (5%), and
+         once started half the visitors finished. The extra tap on "Fazer o
+         diagnóstico" was the screen they left on, so the first question now is
+         the first tap. The button only shows when coming Back from q2. -->
+    <p class="selo selo-topo">O diagnóstico começa aqui · 11 perguntas · 2 minutos · grátis</p>
+    <fieldset class="pergunta-bloco">
+      <legend class="pergunta">Você sabe quanto sobra por mês, sem abrir planilha?</legend>
+      <label class="opcao"><input type="radio" name="q1" value="sei_numero"><span class="marca"></span><span class="rotulo">Sei o número</span></label>
+      <label class="opcao"><input type="radio" name="q1" value="mais_ou_menos"><span class="marca"></span><span class="rotulo">Sei mais ou menos</span></label>
+      <label class="opcao"><input type="radio" name="q1" value="varia_demais"><span class="marca"></span><span class="rotulo">Varia demais para saber</span></label>
+      <label class="opcao"><input type="radio" name="q1" value="nao_faco_ideia"><span class="marca"></span><span class="rotulo">Não faço ideia</span></label>
+    </fieldset>
+    <button class="btn" type="button" data-avancar disabled hidden>Continuar</button>
 
     <!-- Real distribution of degrau_real from quiz_essencial.jsonl, tests and
          junk leads removed: 19 respondents on 23/09/2026. Update by hand as the
@@ -75,21 +87,6 @@
     </ul>
 
     <span class="aviso">Não é recomendação de investimento e nenhum ativo é citado.</span>
-  </div>
-</section>
-
-<!-- Tela 1 · Q1 · O fluxo -->
-<section class="tela" id="tela-q1" data-bloco="A · Via aérea" tabindex="-1">
-  <div class="wrap">
-    <fieldset class="pergunta-bloco">
-      <legend class="pergunta">Você sabe quanto sobra por mês, sem abrir planilha?</legend>
-      <label class="opcao"><input type="radio" name="q1" value="sei_numero"><span class="marca"></span><span class="rotulo">Sei o número</span></label>
-      <label class="opcao"><input type="radio" name="q1" value="mais_ou_menos"><span class="marca"></span><span class="rotulo">Sei mais ou menos</span></label>
-      <label class="opcao"><input type="radio" name="q1" value="varia_demais"><span class="marca"></span><span class="rotulo">Varia demais para saber</span></label>
-      <label class="opcao"><input type="radio" name="q1" value="nao_faco_ideia"><span class="marca"></span><span class="rotulo">Não faço ideia</span></label>
-    </fieldset>
-    <button class="btn" type="button" data-avancar disabled>Continuar</button>
-    <div><button class="voltar" type="button" data-voltar>Voltar</button></div>
   </div>
 </section>
 

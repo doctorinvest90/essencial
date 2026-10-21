@@ -26,8 +26,9 @@ Fonte de verdade do texto **antes** de virar HTML. Spec: `docs/superpowers/specs
 >
 > **A** Via aérea · o caixa do mês — **B** Ventilação · a proteção da renda — **C** Circulação · o investimento — **D** Reavaliação · revisão e imposto
 >
-> **[ FAZER O DIAGNÓSTICO ]**
-> Grátis · 11 perguntas · 2 minutos · resultado na hora
+> O diagnóstico começa aqui · 11 perguntas · 2 minutos · grátis
+>
+> **Você sabe quanto sobra por mês, sem abrir planilha?** (a q1, com as 4 opções; tocar numa já leva à q2)
 >
 > **6 em cada 10 travam antes de investir.** Onde os médicos que já fizeram o diagnóstico pararam: A 58% · B 32% · C 5% · D 5% · ? você
 > *Base: médicos que fizeram o diagnóstico desde agosto de 2026.*
@@ -38,6 +39,8 @@ Fonte de verdade do texto **antes** de virar HTML. Spec: `docs/superpowers/specs
 > Não é recomendação de investimento e nenhum ativo é citado.
 
 Primeira dobra reescrita em 23/09/2026: o marco `essencial-quiz-start` mostrou que ~9 em 10 visitantes pagos saíam desta tela sem responder a q1. Os percentuais do gráfico são o `degrau_real` real de `quiz_essencial.jsonl` (19 respondentes, sem testes e lixo) e se atualizam à mão. **Nunca pôr AUM aqui**: liga a PJ ao patrimônio da Eleva/Mont/Warren (memorando BBL, 17/09).
+
+21/10/2026: a reescrita de 23/09 não moveu o número (05–21/10: 16 de 297 chegadas responderam a q1, 5%; das 16, 8 concluíram). O botão "Fazer o diagnóstico" saiu e a q1 passou para a capa, para o primeiro toque já ser a primeira resposta.
 
 ---
 

@@ -87,12 +87,18 @@ function sincronizarAvanco(tela) {
   const radio = tela.querySelector('input[type="radio"]');
   if (!radio) return; // content screens have nothing to answer
   botao.disabled = respostas[radio.name] === undefined;
+  // The cover carries q1. A disabled "Continuar" under the very first question
+  // reads as a dead button, so there it only appears once q1 has an answer,
+  // which only happens coming Back from q2.
+  if (tela.classList.contains("abertura")) botao.hidden = botao.disabled;
 }
 
 function atualizarProgresso(tela) {
   const bloco = tela.dataset.bloco;
-  progresso.hidden = !bloco;
-  if (!bloco) return;
+  // The cover counts as step 1 (it holds q1), so q2 reads "2 de 12"; the bar
+  // itself stays off there, above the headline.
+  progresso.hidden = !bloco || tela.classList.contains("abertura");
+  if (progresso.hidden) return;
   const passo = contadas.indexOf(tela) + 1;
   progressoBloco.textContent = bloco;
   progressoPasso.textContent = `${passo} de ${contadas.length}`;

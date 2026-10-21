@@ -103,6 +103,11 @@ main { flex: 1 0 auto; display: flex; flex-direction: column; }
 .degraus small { display: block; font-size: 13px; font-weight: 300; opacity: 0.7; margin-top: 2px; }
 
 .selo { font-size: 14px; text-align: center; opacity: 0.75; margin-top: 12px; }
+/* on the cover the line introduces q1, so it sits above it, aligned with it */
+.selo-topo { text-align: left; color: var(--gold); opacity: 1; margin: 30px 0 10px; }
+/* q1 on the cover is smaller than on a question screen: the headline above it
+   is the page's title, the question is the first step */
+.abertura .pergunta { font-size: clamp(24px, 5.8vw, 30px); margin-bottom: 18px; }
 
 /* where the others stopped */
 .onde {
@@ -255,6 +260,8 @@ main { flex: 1 0 auto; display: flex; flex-direction: column; }
 }
 .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(201, 168, 76, 0.42); }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+/* display:inline-block above would otherwise beat the hidden attribute */
+.btn[hidden] { display: none; }
 .btn-largo { width: 100%; text-align: center; }
 /* the advance button of a question screen sits right under the last option */
 .pergunta-bloco + .btn { margin-top: 10px; }
